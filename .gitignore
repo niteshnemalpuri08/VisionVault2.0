@@ -1,1 +1,9 @@
+# Ignore the database
+*.db
+
+# Ignore student face data
+backend/faces/
+
+# Ignore Python environment and cache
+__pycache__/
 .env
