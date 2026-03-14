@@ -1,187 +1,68 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Assignments - Student Dashboard</title>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <style>
-        /* UNIFIED GLASS-MORPHISM THEME */
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        
-        body { 
-            font-family: 'Poppins', sans-serif; 
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
-            min-height: 100vh; 
-            color: white;
-            display: flex;
-            justify-content: center;
-            padding: 20px;
-        }
-
-        .container { width: 100%; max-width: 900px; }
-
-        /* HEADER WITH GLASS EFFECT */
-        .header { 
-            background: rgba(255, 255, 255, 0.1); 
-            backdrop-filter: blur(15px); 
-            -webkit-backdrop-filter: blur(15px);
-            border-radius: 20px; 
-            padding: 30px; 
-            margin-bottom: 30px; 
-            border: 1px solid rgba(255,255,255,0.2); 
-            display: flex; 
-            justify-content: space-between; 
-            align-items: center;
-            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.2);
-        }
-
-        .back-btn { 
-            background: rgba(255,255,255,0.2); 
-            color: white; 
-            border: 1px solid rgba(255,255,255,0.3);
-            padding: 10px 20px; 
-            border-radius: 12px; 
-            cursor: pointer; 
-            text-decoration: none;
-            transition: 0.3s;
-            font-weight: 500;
-        }
-
-        .back-btn:hover { background: rgba(255,255,255,0.4); }
-
-        /* TASK CARDS SECTION */
-        .task-list { display: grid; gap: 20px; }
-
-        .task-card { 
-            background: rgba(255, 255, 255, 0.08); 
-            backdrop-filter: blur(10px);
-            padding: 25px; 
-            border-radius: 18px; 
-            border: 1px solid rgba(255,255,255,0.1);
-            display: flex; 
-            justify-content: space-between; 
-            align-items: center;
-            transition: transform 0.3s ease, box-shadow 0.3s ease;
-        }
-
-        .task-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 12px 40px rgba(0,0,0,0.2);
-            background: rgba(255, 255, 255, 0.12);
-        }
-
-        /* STATUS INDICATORS (Proactive Alerts Logic) */
-        .pending { border-left: 6px solid #ff9800; }
-        .at-risk { border-left: 6px solid #ff4b2b; animation: pulse 2s infinite; }
-        .completed { border-left: 6px solid #4caf50; opacity: 0.8; }
-
-        @keyframes pulse {
-            0% { box-shadow: 0 0 0 0 rgba(255, 75, 43, 0.4); }
-            70% { box-shadow: 0 0 0 10px rgba(255, 75, 43, 0); }
-            100% { box-shadow: 0 0 0 0 rgba(255, 75, 43, 0); }
-        }
-
-        .ai-badge {
-            display: inline-block;
-            background: rgba(102, 126, 234, 0.3);
-            padding: 4px 12px;
-            border-radius: 20px;
-            font-size: 0.8rem;
-            margin-top: 10px;
-            border: 1px solid rgba(255,255,255,0.2);
-            color: #d1d8ff;
-        }
-
-        .upload-btn { 
-            background: #2196f3; 
-            color: white; 
-            padding: 12px 20px; 
-            border-radius: 10px; 
-            border: none; 
-            cursor: pointer; 
-            font-weight: 600;
-            transition: 0.3s;
-        }
-
-        .upload-btn:hover { background: #1976d2; transform: scale(1.05); }
-
-        .done-tag { color: #4caf50; font-weight: 700; font-size: 1.1rem; }
-    </style>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+  <title>Assignments — GIET Portal</title>
+  <link rel="stylesheet" href="../theme.css">
+  <style>
+    .task{background:var(--glass);border:1px solid var(--border);border-radius:var(--r-md);padding:22px 20px;display:flex;justify-content:space-between;align-items:center;gap:16px;transition:all .3s;margin-bottom:14px;border-left:4px solid var(--c,var(--border));}
+    .task:hover{background:var(--glass-hover);transform:translateX(4px);}
+    .task.risk{--c:#ef4444;animation:pulse 2s infinite;}
+    .task.pend{--c:#f59e0b;}
+    .task.done{--c:#10b981;opacity:.82;}
+    @keyframes pulse{0%{box-shadow:0 0 0 0 rgba(239,68,68,.4)}70%{box-shadow:0 0 0 10px transparent}100%{box-shadow:0 0 0 0 transparent}}
+    .task-title{font-weight:700;font-size:1em;margin-bottom:4px;}
+    .task-sub{font-size:.8em;color:var(--muted);}
+    .ai-tag{display:inline-block;background:rgba(91,124,255,.2);color:#a5b4fc;border:1px solid rgba(91,124,255,.3);border-radius:6px;font-size:.72em;padding:3px 9px;margin-top:8px;font-weight:600;}
+    .score-tag{display:inline-block;background:rgba(16,185,129,.2);color:#6ee7b7;border:1px solid rgba(16,185,129,.3);border-radius:6px;font-size:.72em;padding:3px 9px;margin-top:8px;font-weight:700;}
+    .done-check{color:var(--green);font-size:1.4em;}
+    .upload-btn{background:linear-gradient(135deg,#3b82f6,#6366f1);color:#fff;border:none;padding:10px 18px;border-radius:10px;font-weight:700;font-size:.83em;cursor:pointer;flex-shrink:0;transition:.2s;}
+    .upload-btn:hover{transform:scale(1.05);}
+  </style>
 </head>
 <body>
-    <div class="container">
-        <div class="header">
-            <div>
-                <h1>📝 My Assignments</h1>
-                <p style="opacity: 0.8; font-size: 0.9rem;">Track and submit your semester tasks</p>
-            </div>
-            <a href="index.html" class="back-btn">← Back to Portal</a>
-        </div>
-
-        <div class="task-list" id="taskList">
-            </div>
+<div class="page page-narrow">
+  <div class="topbar">
+    <div>
+      <div class="topbar-title">📝 My Assignments</div>
+      <div class="topbar-sub">Track and submit your semester tasks</div>
     </div>
+    <a href="index.html" class="back-btn">← Dashboard</a>
+  </div>
+  <div id="taskList"></div>
+</div>
+<script src="../data_store.js"></script>
+<script src="student_sync.js"></script>
+<script>
+  const user = JSON.parse(localStorage.getItem('user'));
+  if (!user || user.role !== 'student') window.location.replace('../login.html');
 
-    <script src="../data_store.js"></script>
-    <script src="student_sync.js"></script>
-    
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            // Placeholder for data sync
-            const data = (typeof STUDENT_SYNC !== 'undefined') ? STUDENT_SYNC.getData() : { stats: { assignmentsPending: 2 } };
-            
-            const pendingCount = data.stats.assignmentsPending;
-            let html = '';
+  document.addEventListener('DOMContentLoaded', () => {
+    let pending = 2;
+    try {
+      if (typeof STUDENT_SYNC !== 'undefined') {
+        const d = STUDENT_SYNC.getData();
+        if (d) pending = d.stats.assignmentsPending;
+      }
+    } catch(e){}
 
-            // 1. AT-RISK TASK (Proactive Alert Logic)
-            if(pendingCount > 0) {
-                html += `
-                <div class="task-card at-risk">
-                    <div>
-                        <h3 style="color: #ff9e80;">Math: Integration Problems</h3>
-                        <p style="font-size: 0.9rem;">Status: <span style="font-weight:bold;">⚠️ Critical - Due Tomorrow</span></p>
-                        <div class="ai-badge">🤖 AI Forecast: 88% Expected Grade</div>
-                    </div>
-                    <button class="upload-btn">Upload Solution</button>
-                </div>`;
-            }
+    const tasks = [];
+    if (pending > 0) tasks.push({cls:'risk',title:'Math: Integration Problems',sub:'Mathematics · ⚠️ Due Tomorrow',ai:'🤖 AI Forecast: 88% Expected Grade',done:false});
+    if (pending > 1) tasks.push({cls:'pend',title:'Physics: Lab Report',sub:'Physics · Due This Friday',ai:'🤖 AI Forecast: 92% Expected Grade',done:false});
+    tasks.push({cls:'done',title:'English: Essay on Macbeth',sub:'Submitted · Feedback: Excellent structure',score:'Score: 85/100',done:true});
+    tasks.push({cls:'done',title:'CS: Java Project',sub:'Submitted · Feedback: Optimized logic',score:'Score: 98/100',done:true});
 
-            // 2. STANDARD PENDING TASK
-            if(pendingCount > 1) {
-                html += `
-                <div class="task-card pending">
-                    <div>
-                        <h3>Physics: Lab Report</h3>
-                        <p style="font-size: 0.9rem; opacity: 0.8;">Deadline: This Friday</p>
-                        <div class="ai-badge">🤖 AI Forecast: 92% Expected Grade</div>
-                    </div>
-                    <button class="upload-btn">Upload PDF</button>
-                </div>`;
-            }
-
-            // 3. COMPLETED TASKS (Relational Data Visualization)
-            html += `
-                <div class="task-card completed">
-                    <div>
-                        <h3>English: Essay on Macbeth</h3>
-                        <p style="font-size: 0.9rem; opacity: 0.8;">Feedback: Excellent structure</p>
-                        <div class="ai-badge" style="background: rgba(76, 175, 80, 0.2); color: #b2ffb5;">Actual Score: 85/100</div>
-                    </div>
-                    <span class="done-tag">✅ Submitted</span>
-                </div>
-                <div class="task-card completed">
-                    <div>
-                        <h3>CS: Java Project</h3>
-                        <p style="font-size: 0.9rem; opacity: 0.8;">Feedback: Optimized code logic</p>
-                        <div class="ai-badge" style="background: rgba(76, 175, 80, 0.2); color: #b2ffb5;">Actual Score: 98/100</div>
-                    </div>
-                    <span class="done-tag">✅ Submitted</span>
-                </div>
-            `;
-
-            document.getElementById('taskList').innerHTML = html;
-        });
-    </script>
+    document.getElementById('taskList').innerHTML = tasks.map(t => `
+      <div class="task ${t.cls}">
+        <div>
+          <div class="task-title">${t.title}</div>
+          <div class="task-sub">${t.sub}</div>
+          ${t.ai    ? `<div class="ai-tag">${t.ai}</div>` : ''}
+          ${t.score ? `<div class="score-tag">${t.score}</div>` : ''}
+        </div>
+        ${t.done ? '<span class="done-check">✅</span>' : '<button class="upload-btn">Upload</button>'}
+      </div>`).join('');
+  });
+</script>
 </body>
 </html>

@@ -1,212 +1,74 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Resources - Student Dashboard</title>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <style>
-        /* CORE GLASS-MORPHISM THEME */
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        
-        body { 
-            font-family: 'Poppins', sans-serif; 
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
-            min-height: 100vh; 
-            color: white; 
-            padding: 30px;
-            display: flex;
-            justify-content: center;
-        }
-
-        .container { width: 100%; max-width: 900px; }
-
-        /* HEADER ENHANCEMENT */
-        .header { 
-            background: rgba(255, 255, 255, 0.1); 
-            backdrop-filter: blur(15px); 
-            -webkit-backdrop-filter: blur(15px);
-            padding: 30px; 
-            border-radius: 20px; 
-            display: flex; 
-            justify-content: space-between; 
-            align-items: center; 
-            margin-bottom: 25px; 
-            border: 1px solid rgba(255,255,255,0.2);
-            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
-        }
-
-        .back-btn { 
-            background: rgba(255,255,255,0.15); 
-            border: 1px solid rgba(255,255,255,0.2); 
-            padding: 10px 20px; 
-            color: white; 
-            border-radius: 12px; 
-            cursor: pointer; 
-            text-decoration: none; 
-            transition: 0.3s;
-            font-weight: 500;
-        }
-
-        .back-btn:hover { background: rgba(255,255,255,0.25); transform: scale(1.05); }
-
-        /* CATEGORY FILTER PILLS */
-        .filter-container {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 25px;
-            overflow-x: auto;
-            padding-bottom: 10px;
-        }
-
-        .filter-pill {
-            background: rgba(255,255,255,0.1);
-            border: 1px solid rgba(255,255,255,0.1);
-            padding: 8px 18px;
-            border-radius: 25px;
-            font-size: 0.85rem;
-            cursor: pointer;
-            white-space: nowrap;
-            transition: 0.3s;
-        }
-
-        .filter-pill.active, .filter-pill:hover {
-            background: #667eea;
-            border-color: #667eea;
-            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
-        }
-
-        /* RESOURCE LIST ENHANCEMENT */
-        .resource-list { display: grid; gap: 18px; }
-
-        .resource-item { 
-            background: rgba(255, 255, 255, 0.08); 
-            backdrop-filter: blur(10px);
-            padding: 25px; 
-            border-radius: 18px; 
-            display: flex; 
-            justify-content: space-between; 
-            align-items: center; 
-            transition: 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-            border: 1px solid rgba(255,255,255,0.1);
-        }
-
-        .resource-item:hover { 
-            background: rgba(255, 255, 255, 0.15); 
-            transform: translateX(10px) scale(1.02);
-            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-        }
-
-        .res-icon { 
-            font-size: 2em; 
-            margin-right: 20px;
-            background: rgba(255,255,255,0.1);
-            width: 60px;
-            height: 60px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border-radius: 15px;
-        }
-
-        .res-info h4 { margin: 0; font-size: 1.15em; font-weight: 600; color: #fff; }
-        .res-info p { margin: 4px 0 0; font-size: 0.9em; opacity: 0.7; }
-
-        /* AI RECOMMENDATION BADGE */
-        .ai-tag {
-            display: inline-block;
-            margin-top: 8px;
-            background: rgba(102, 126, 234, 0.2);
-            color: #c7d2fe;
-            font-size: 0.75rem;
-            padding: 4px 10px;
-            border-radius: 6px;
-            border: 1px solid rgba(102, 126, 234, 0.3);
-            font-weight: 500;
-        }
-
-        .download-btn { 
-            background: linear-gradient(45deg, #667eea, #764ba2);
-            color: white; 
-            padding: 12px 22px; 
-            border-radius: 12px; 
-            text-decoration: none; 
-            font-size: 0.9em; 
-            font-weight: 600;
-            transition: 0.3s;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-        }
-
-        .download-btn:hover { 
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
-        }
-    </style>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+  <title>Resources — GIET Portal</title>
+  <link rel="stylesheet" href="../theme.css">
+  <style>
+    .res-item{background:var(--glass);border:1px solid var(--border);border-radius:var(--r-md);padding:22px 20px;display:flex;align-items:center;justify-content:space-between;gap:16px;transition:all .3s;margin-bottom:14px;border-left:4px solid var(--c,var(--border));}
+    .res-item:hover{background:var(--glass-hover);transform:translateX(8px);}
+    .res-ic{width:52px;height:52px;border-radius:14px;background:rgba(255,255,255,.07);display:grid;place-items:center;font-size:1.6em;flex-shrink:0;}
+    .res-info h4{font-size:.95em;font-weight:700;margin-bottom:3px;}
+    .res-info p{font-size:.78em;color:var(--muted);}
+    .ai-rec{display:inline-block;margin-top:5px;background:rgba(91,124,255,.18);color:#a5b4fc;border:1px solid rgba(91,124,255,.3);border-radius:5px;font-size:.68em;padding:2px 8px;font-weight:700;}
+    .filter-bar{display:flex;gap:8px;margin-bottom:20px;flex-wrap:wrap;}
+    .pill{background:rgba(255,255,255,.06);border:1px solid var(--border);padding:7px 16px;border-radius:99px;font-size:.8em;cursor:pointer;transition:.2s;white-space:nowrap;}
+    .pill.active,.pill:hover{background:var(--accent);border-color:var(--accent);color:#fff;box-shadow:0 4px 14px rgba(91,124,255,.35);}
+  </style>
 </head>
 <body>
-    <div class="container">
-        <div class="header">
-            <div>
-                <h1 style="letter-spacing: -1px;">📚 Study Resources</h1>
-                <p style="opacity: 0.8; font-size: 0.9rem;">Course materials & AI-recommended prep</p>
-            </div>
-            <a href="index.html" class="back-btn">← Back to Portal</a>
-        </div>
-
-        <div class="filter-container">
-            <div class="filter-pill active">All Subjects</div>
-            <div class="filter-pill">Mathematics</div>
-            <div class="filter-pill">Physics</div>
-            <div class="filter-pill">CS / Java</div>
-            <div class="filter-pill">Lab Manuals</div>
-        </div>
-
-        <div class="resource-list">
-            <div class="resource-item" style="border-left: 5px solid #667eea;">
-                <div style="display:flex; align-items:center;">
-                    <span class="res-icon">💻</span>
-                    <div class="res-info">
-                        <h4>Computer Science - Java OOPs</h4>
-                        <p>Lecture slides and code examples</p>
-                        <span class="ai-tag">🤖 AI Recommended for your CS Grade goal</span>
-                    </div>
-                </div>
-                <a href="#" class="download-btn">Download ZIP</a>
-            </div>
-
-            <div class="resource-item">
-                <div style="display:flex; align-items:center;">
-                    <span class="res-icon">📘</span>
-                    <div class="res-info">
-                        <h4>Mathematics - Calculus Notes</h4>
-                        <p>Chapter 4: Integration</p>
-                    </div>
-                </div>
-                <a href="#" class="download-btn">Download PDF</a>
-            </div>
-
-            <div class="resource-item">
-                <div style="display:flex; align-items:center;">
-                    <span class="res-icon">⚛️</span>
-                    <div class="res-info">
-                        <h4>Physics - Optics Formula Sheet</h4>
-                        <p>Quick revision guide</p>
-                    </div>
-                </div>
-                <a href="#" class="download-btn">Download PDF</a>
-            </div>
-            
-            <div class="resource-item">
-                <div style="display:flex; align-items:center;">
-                    <span class="res-icon">🏐</span>
-                    <div class="res-info">
-                        <h4>Physical Education - Rules Book</h4>
-                        <p>Football and Volleyball regulations</p>
-                    </div>
-                </div>
-                <a href="#" class="download-btn">Download PDF</a>
-            </div>
-        </div>
+<div class="page page-narrow">
+  <div class="topbar">
+    <div>
+      <div class="topbar-title">📚 Study Resources</div>
+      <div class="topbar-sub">Course materials & AI-recommended prep</div>
     </div>
+    <a href="index.html" class="back-btn">← Dashboard</a>
+  </div>
+
+  <div class="filter-bar">
+    <div class="pill active">All Subjects</div>
+    <div class="pill">Mathematics</div>
+    <div class="pill">Physics</div>
+    <div class="pill">CS / Java</div>
+    <div class="pill">Lab Manuals</div>
+  </div>
+
+  <div>
+    <div class="res-item" style="--c:#5b7cff">
+      <div style="display:flex;align-items:center;gap:14px">
+        <div class="res-ic">💻</div>
+        <div class="res-info"><h4>Computer Science — Java OOPs</h4><p>Lecture slides and code examples</p><div class="ai-rec">🤖 AI Recommended</div></div>
+      </div>
+      <a href="#" class="btn btn-primary btn-sm">⬇ Download</a>
+    </div>
+    <div class="res-item" style="--c:#22d3ee">
+      <div style="display:flex;align-items:center;gap:14px">
+        <div class="res-ic">📘</div>
+        <div class="res-info"><h4>Mathematics — Calculus Notes</h4><p>Chapter 4: Integration</p></div>
+      </div>
+      <a href="#" class="btn btn-ghost btn-sm">⬇ PDF</a>
+    </div>
+    <div class="res-item" style="--c:#a78bfa">
+      <div style="display:flex;align-items:center;gap:14px">
+        <div class="res-ic">⚛️</div>
+        <div class="res-info"><h4>Physics — Optics Formula Sheet</h4><p>Quick revision guide</p></div>
+      </div>
+      <a href="#" class="btn btn-ghost btn-sm">⬇ PDF</a>
+    </div>
+    <div class="res-item" style="--c:#10b981">
+      <div style="display:flex;align-items:center;gap:14px">
+        <div class="res-ic">🏐</div>
+        <div class="res-info"><h4>Physical Education — Rules Book</h4><p>Football and Volleyball regulations</p></div>
+      </div>
+      <a href="#" class="btn btn-ghost btn-sm">⬇ PDF</a>
+    </div>
+  </div>
+</div>
+<script>
+  const user=JSON.parse(localStorage.getItem('user'));
+  if(!user)window.location.replace('../login.html');
+  document.querySelectorAll('.pill').forEach(p=>p.addEventListener('click',()=>{document.querySelectorAll('.pill').forEach(x=>x.classList.remove('active'));p.classList.add('active');}));
+</script>
 </body>
 </html>

@@ -1,65 +1,241 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Parent Dashboard</title>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
-    <style>
-        body { margin: 0; font-family: 'Poppins', sans-serif; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; color: white; padding: 20px; box-sizing: border-box; }
-        .container { max-width: 1000px; margin: 0 auto; }
-        .header { background: rgba(255,255,255,0.1); padding: 25px; border-radius: 15px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; border: 1px solid rgba(255,255,255,0.1); }
-        .logout-btn { background: #ff4757; border: none; padding: 10px 20px; color: white; border-radius: 20px; cursor: pointer; font-weight: bold; }
-        .student-info { background: rgba(0,0,0,0.25); padding: 20px; border-radius: 15px; margin-bottom: 30px; display: flex; justify-content: space-around; flex-wrap: wrap; gap: 15px; }
-        .info-box { text-align: center; min-width: 100px; }
-        .info-box span { display: block; font-size: 1.5em; font-weight: bold; margin-bottom: 5px; }
-        .grid-menu { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; }
-        .menu-card { background: rgba(255,255,255,0.1); padding: 30px; border-radius: 15px; text-align: center; text-decoration: none; color: white; transition: 0.3s; border: 1px solid rgba(255,255,255,0.1); }
-        .menu-card:hover { transform: translateY(-5px); background: rgba(255,255,255,0.2); }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Parent Dashboard — GIET Portal</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=Sora:wght@700;800&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      --bg:     #07101a;
+      --glass:  rgba(255,255,255,0.06);
+      --border: rgba(255,255,255,0.10);
+      --accent: #0ea5e9;
+      --green:  #22c55e;
+      --amber:  #f59e0b;
+      --red:    #ef4444;
+      --text:   #e8eaf6;
+      --muted:  rgba(180,220,255,0.5);
+      --r:      16px;
+    }
+
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    body::before {
+      content: '';
+      position: fixed; inset: 0; z-index: 0;
+      background: radial-gradient(ellipse 70% 50% at 20% 15%, rgba(14,165,233,0.18) 0%, transparent 60%),
+                  radial-gradient(ellipse 60% 40% at 80% 85%, rgba(16,185,129,0.12) 0%, transparent 55%);
+      pointer-events: none;
+    }
+
+    .wrap { position: relative; z-index: 1; max-width: 960px; margin: 0 auto; padding: 24px 20px 48px; }
+
+    /* ── Header ── */
+    .hdr {
+      display: flex; align-items: center; justify-content: space-between;
+      background: var(--glass); backdrop-filter: blur(24px);
+      border: 1px solid var(--border); border-radius: 22px;
+      padding: 22px 30px; margin-bottom: 28px;
+      flex-wrap: wrap; gap: 14px;
+      animation: fadeDown 0.45s ease both;
+    }
+    @keyframes fadeDown { from { opacity: 0; transform: translateY(-14px); } to { opacity: 1; transform: none; } }
+
+    .hdr-info h1 {
+      font-family: 'Sora', sans-serif; font-size: 1.35em; font-weight: 800;
+      background: linear-gradient(90deg,#fff,#7dd3fc);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+    }
+    .hdr-info .sub { font-size: 0.8em; color: var(--muted); margin-top: 3px; }
+
+    .btn {
+      padding: 10px 20px; border-radius: 12px; border: none;
+      font-family: 'DM Sans', sans-serif; font-size: 0.875em; font-weight: 600; cursor: pointer; transition: all 0.2s;
+    }
+    .btn-danger { background: rgba(239,68,68,0.15); border: 1px solid rgba(239,68,68,0.3); color: #fca5a5; }
+    .btn-danger:hover { background: rgba(239,68,68,0.28); color: #fff; }
+
+    /* ── Child info card ── */
+    .child-card {
+      background: linear-gradient(135deg, rgba(14,165,233,0.15), rgba(16,185,129,0.08));
+      border: 1px solid rgba(14,165,233,0.3);
+      border-radius: 22px; padding: 24px 28px;
+      margin-bottom: 28px; display: flex; align-items: center; gap: 20px; flex-wrap: wrap;
+      animation: fadeUp 0.5s ease both;
+    }
+    @keyframes fadeUp { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: none; } }
+
+    .child-avatar {
+      width: 64px; height: 64px; border-radius: 50%;
+      background: linear-gradient(135deg, var(--accent), #22c55e);
+      display: grid; place-items: center;
+      font-family: 'Sora', sans-serif; font-size: 1.6em; font-weight: 800;
+      flex-shrink: 0;
+      box-shadow: 0 0 0 4px rgba(14,165,233,0.25);
+    }
+    .child-details { flex: 1; }
+    .child-name    { font-family: 'Sora', sans-serif; font-size: 1.2em; font-weight: 800; }
+    .child-meta    { font-size: 0.8em; color: var(--muted); margin-top: 3px; }
+
+    .child-stats { display: flex; gap: 20px; flex-wrap: wrap; margin-left: auto; }
+    .cs-item { text-align: center; }
+    .cs-val  { font-family: 'Sora', sans-serif; font-size: 1.6em; font-weight: 800; display: block; line-height: 1.1; }
+    .cs-lbl  { font-size: 0.7em; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; }
+
+    /* attendance bar */
+    .att-bar-bg  { height: 6px; background: rgba(255,255,255,0.1); border-radius: 99px; margin-top: 8px; width: 80px; }
+    .att-bar-fill { height: 6px; border-radius: 99px; transition: width 1s ease; }
+
+    /* ── Nav grid ── */
+    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 16px; }
+    .nav-card {
+      background: var(--glass); border: 1px solid var(--border); border-radius: 20px;
+      text-decoration: none; color: var(--text);
+      padding: 26px 22px;
+      display: flex; flex-direction: column; gap: 10px;
+      transition: all 0.28s cubic-bezier(0.175,0.885,0.32,1.275);
+      border-bottom: 3px solid var(--c2, var(--border));
+      animation: fadeUp 0.5s ease both;
+    }
+    .nav-card:hover {
+      transform: translateY(-5px) scale(1.02);
+      background: rgba(255,255,255,0.10);
+      box-shadow: 0 14px 40px rgba(0,0,0,0.4);
+    }
+    .nav-ic {
+      font-size: 1.8em; width: 52px; height: 52px; border-radius: 14px;
+      background: rgba(255,255,255,0.08); display: grid; place-items: center;
+    }
+    .nav-card strong { font-size: 0.95em; font-weight: 700; }
+    .nav-card small  { font-size: 0.78em; color: var(--muted); line-height: 1.4; }
+
+    .nav-card:nth-child(1) { --c2: #4f6ef7; animation-delay: 0.08s; }
+    .nav-card:nth-child(2) { --c2: #22c55e; animation-delay: 0.12s; }
+    .nav-card:nth-child(3) { --c2: #ec4899; animation-delay: 0.16s; }
+
+    /* ── Loading states ── */
+    .skeleton {
+      background: linear-gradient(90deg, rgba(255,255,255,0.06) 25%, rgba(255,255,255,0.12) 50%, rgba(255,255,255,0.06) 75%);
+      background-size: 400% 100%;
+      animation: shimmer 1.4s infinite; border-radius: 8px; display: inline-block;
+    }
+    @keyframes shimmer { 0% { background-position: 100% 0; } 100% { background-position: -100% 0; } }
+
+    @media (max-width: 600px) {
+      .hdr { flex-direction: column; text-align: center; }
+      .child-card { flex-direction: column; align-items: flex-start; }
+      .child-stats { margin-left: 0; }
+    }
+  </style>
 </head>
 <body>
-    <div class="container">
-        <div class="header">
-            <div><h1>👨‍👩‍👧 Parent Portal</h1><p>Welcome, <span id="parentName">...</span></p></div>
-            <button class="logout-btn" onclick="logout()">Logout</button>
-        </div>
+<div class="wrap">
 
-        <div class="student-info">
-            <div class="info-box"><span id="childName">Loading...</span><small>Child's Name</small></div>
-            <div class="info-box"><span id="childRoll">...</span><small>Roll No</small></div>
-            <div class="info-box"><span id="childAvg" style="color: #4CAF50;">--%</span><small>Avg Marks</small></div>
-        </div>
-
-        <div class="grid-menu">
-            <a href="performance.html" class="menu-card"><h3>📊 Performance</h3><p>Detailed Grades</p></a>
-            <a href="attendance.html" class="menu-card"><h3>📅 Attendance</h3><p>Daily Status</p></a>
-            <a href="communication.html" class="menu-card"><h3>💬 Messages</h3><p>Chat with Teacher</p></a>
-        </div>
+  <!-- Header -->
+  <div class="hdr">
+    <div class="hdr-info">
+      <h1>👨‍👩‍👧 Parent Portal</h1>
+      <p class="sub">Welcome, <strong id="parentName">…</strong> · GIET University 2025–26</p>
     </div>
+    <button class="btn btn-danger" onclick="logout()">🚪 Logout</button>
+  </div>
 
-    <script>
-        const user = JSON.parse(localStorage.getItem('user'));
-        if (!user || user.role !== 'parent') window.location.href = '../login.html';
+  <!-- Child summary -->
+  <div class="child-card">
+    <div class="child-avatar" id="childAvatar">?</div>
+    <div class="child-details">
+      <div class="child-name" id="childName"><span class="skeleton" style="width:140px;height:22px"></span></div>
+      <div class="child-meta" id="childMeta">Loading child data…</div>
+    </div>
+    <div class="child-stats">
+      <div class="cs-item">
+        <span class="cs-val" id="childAvg" style="color:#22c55e">--</span>
+        <div class="cs-lbl">Avg Marks</div>
+      </div>
+      <div class="cs-item">
+        <span class="cs-val" id="childAtt" style="color:#38bdf8">--</span>
+        <div class="cs-lbl">Attendance</div>
+        <div class="att-bar-bg"><div class="att-bar-fill" id="attBar" style="width:0%;background:#38bdf8"></div></div>
+      </div>
+    </div>
+  </div>
 
-        document.addEventListener('DOMContentLoaded', async () => {
-            document.getElementById('parentName').textContent = user.name;
-            try {
-                const res = await fetch('/api/parent/child', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ username: user.username })
-                });
-                const data = await res.json();
-                if (!data.error) {
-                    document.getElementById('childName').textContent = data.child_name;
-                    document.getElementById('childRoll').textContent = data.roll.toUpperCase();
-                    document.getElementById('childAvg').textContent = data.avg + '%';
-                }
-            } catch (e) { console.error(e); }
-        });
+  <!-- Navigation -->
+  <div class="grid">
+    <a href="performance.html" class="nav-card">
+      <div class="nav-ic">📊</div>
+      <strong>Performance</strong>
+      <small>Subject-wise marks, grades & radar chart</small>
+    </a>
+    <a href="attendance.html"  class="nav-card">
+      <div class="nav-ic">📅</div>
+      <strong>Attendance</strong>
+      <small>Daily attendance record & overall status</small>
+    </a>
+    <a href="communication.html" class="nav-card">
+      <div class="nav-ic">💬</div>
+      <strong>Chat with Teacher</strong>
+      <small>Direct secure messaging</small>
+    </a>
+  </div>
 
-        function logout() { localStorage.clear(); window.location.href = '../login.html'; }
-    </script>
+</div>
+
+<script>
+  const user = JSON.parse(localStorage.getItem('user'));
+  if (!user || user.role !== 'parent') { window.location.replace('../login.html'); }
+
+  document.getElementById('parentName').textContent = user.name;
+
+  document.addEventListener('DOMContentLoaded', async () => {
+    try {
+      const res  = await fetch('/api/parent/child', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username: user.username })
+      });
+      const data = await res.json();
+
+      if (data.error) {
+        document.getElementById('childName').textContent = 'No child linked to this account.';
+        return;
+      }
+
+      // Avatar initial
+      document.getElementById('childAvatar').textContent = data.child_name[0].toUpperCase();
+
+      document.getElementById('childName').textContent = data.child_name;
+      document.getElementById('childMeta').textContent =
+        `Roll: ${data.roll.toUpperCase()} · Section ${data.section}`;
+
+      // Marks with colour coding
+      const avgEl = document.getElementById('childAvg');
+      avgEl.textContent     = data.avg + '%';
+      avgEl.style.color     = data.avg >= 75 ? '#22c55e' : data.avg >= 60 ? '#f59e0b' : '#ef4444';
+
+      const attEl = document.getElementById('childAtt');
+      attEl.textContent     = data.attendance + '%';
+      attEl.style.color     = data.attendance >= 75 ? '#38bdf8' : '#ef4444';
+
+      const bar = document.getElementById('attBar');
+      bar.style.width       = data.attendance + '%';
+      bar.style.background  = data.attendance >= 75 ? '#38bdf8' : '#ef4444';
+
+    } catch (e) {
+      document.getElementById('childName').textContent = 'Could not load child data.';
+      console.error(e);
+    }
+  });
+
+  function logout() { localStorage.clear(); window.location.replace('../login.html'); }
+</script>
 </body>
 </html>

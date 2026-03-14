@@ -1,72 +1,44 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Section Analytics</title>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <style>
-        body { font-family: 'Poppins', sans-serif; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; color: white; padding: 20px; margin: 0; box-sizing: border-box; }
-        .container { max-width: 900px; margin: 0 auto; }
-        .header { background: rgba(255,255,255,0.1); padding: 20px; border-radius: 15px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border: 1px solid rgba(255,255,255,0.1); }
-        .back-btn { background: rgba(255,255,255,0.2); color: white; padding: 8px 15px; border-radius: 20px; text-decoration: none; font-size: 0.9em; }
-        .chart-box { background: rgba(0,0,0,0.2); padding: 20px; border-radius: 15px; margin-bottom: 20px; height: 320px; border: 1px solid rgba(255,255,255,0.1); }
-    </style>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+  <title>Analytics — GIET Portal</title>
+  <link rel="stylesheet" href="../theme.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>.two-col{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:20px;}@media(max-width:640px){.two-col{grid-template-columns:1fr}}</style>
 </head>
 <body>
-    <div class="container">
-        <div class="header"><h2>📈 Section Analytics</h2><a href="index.html" class="back-btn">Back</a></div>
-        <div class="chart-box"><canvas id="attChart"></canvas></div>
-        <div class="chart-box"><canvas id="subjectChart"></canvas></div>
-    </div>
+<div class="page">
+  <div class="topbar">
+    <div><div class="topbar-title">📊 Section Analytics</div><div class="topbar-sub">Visual data intelligence for your class</div></div>
+    <a href="index.html" class="back-btn">← Dashboard</a>
+  </div>
+  <div class="two-col">
+    <div class="card"><div class="card-hd"><span class="card-title">Attendance Distribution</span></div><div class="chart-box"><canvas id="dChart"></canvas></div></div>
+    <div class="card"><div class="card-hd"><span class="card-title">Subject Averages</span></div><div class="chart-box"><canvas id="bChart"></canvas></div></div>
+  </div>
+  <div class="card"><div class="card-hd"><span class="card-title">Marks Distribution Across Section</span></div><div class="chart-box tall"><canvas id="lChart"></canvas></div></div>
+</div>
+<script>
+  const user=JSON.parse(localStorage.getItem('user'));
+  if(!user||user.role!=='teacher')window.location.replace('../login.html');
+  const opts=(max)=>({responsive:true,maintainAspectRatio:false,scales:{y:{beginAtZero:true,max,grid:{color:'rgba(255,255,255,.06)'},ticks:{color:'rgba(154,171,216,.8)'}},x:{grid:{display:false},ticks:{color:'rgba(154,171,216,.8)'}}},plugins:{legend:{labels:{color:'rgba(154,171,216,.8)'}}}});
 
-    <script>
-        const user = JSON.parse(localStorage.getItem('user'));
-        if(!user || user.role !== 'teacher') window.location.href = '../login.html';
+  document.addEventListener('DOMContentLoaded',async()=>{
+    try{
+      const data=await fetch('/api/teacher/students',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:user.username})}).then(r=>r.json());
+      const s=data.students, g=s.filter(x=>x.attendance>=75).length;
 
-        document.addEventListener('DOMContentLoaded', async () => {
-            try {
-                const res = await fetch('/api/teacher/students', {
-                    method: 'POST', headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({ username: user.username })
-                });
-                const data = await res.json();
-                
-                // 1. Attendance Distribution
-                const good = data.students.filter(s => s.attendance >= 75).length;
-                const bad = data.students.length - good;
+      new Chart(document.getElementById('dChart'),{type:'doughnut',data:{labels:['Good ≥75%','At Risk <75%'],datasets:[{data:[g,s.length-g],backgroundColor:['rgba(16,185,129,.7)','rgba(239,68,68,.7)'],borderWidth:0,borderRadius:6}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'rgba(154,171,216,.8)'}}}}});
 
-                new Chart(document.getElementById('attChart'), {
-                    type: 'doughnut',
-                    data: {
-                        labels: ['Good (>75%)', 'At Risk (<75%)'],
-                        datasets: [{ data: [good, bad], backgroundColor: ['#4CAF50', '#FF5722'], borderColor: 'transparent' }]
-                    },
-                    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { labels: { color: 'white' } } } }
-                });
+      const keys=['math_marks','physics_marks','chemistry_marks','cs_marks','english_marks','pe_marks'], lbls=['Math','Physics','Chem','CS','Eng','PE'];
+      const avgs=keys.map(k=>{const v=s.filter(x=>x[k]!=null);return v.length?Math.round(v.reduce((a,x)=>a+x[k],0)/v.length):0;});
+      new Chart(document.getElementById('bChart'),{type:'bar',data:{labels:lbls,datasets:[{label:'Class Avg',data:avgs,backgroundColor:'rgba(251,191,36,.7)',borderRadius:8}]},options:opts(100)});
 
-                // 2. Class Averages
-                const subjects = ['math_marks', 'physics_marks', 'chemistry_marks', 'cs_marks', 'english_marks', 'pe_marks'];
-                const labels = ['Math', 'Physics', 'Chem', 'CS', 'Eng', 'PE'];
-                const averages = subjects.map(sub => {
-                    const total = data.students.reduce((sum, s) => sum + s[sub], 0);
-                    return Math.round(total / data.students.length) || 0;
-                });
-
-                new Chart(document.getElementById('subjectChart'), {
-                    type: 'bar',
-                    data: {
-                        labels: labels,
-                        datasets: [{ label: 'Class Average %', data: averages, backgroundColor: '#FFD700', borderRadius: 5 }]
-                    },
-                    options: { 
-                        responsive: true, maintainAspectRatio: false, 
-                        scales: { y: { beginAtZero:true, max:100, ticks: { color: 'white' } }, x: { ticks: { color: 'white' } } }
-                    }
-                });
-            } catch(e) { console.error(e); }
-        });
-    </script>
+      const sorted=[...s].sort((a,b)=>a.avg_marks-b.avg_marks);
+      new Chart(document.getElementById('lChart'),{type:'line',data:{labels:sorted.map(x=>x.roll.toUpperCase()),datasets:[{label:'Avg Marks',data:sorted.map(x=>x.avg_marks||0),borderColor:'rgba(91,124,255,.85)',backgroundColor:'rgba(91,124,255,.08)',fill:true,tension:.4,pointRadius:3,pointBackgroundColor:'#5b7cff'}]},options:opts(100)});
+    }catch(e){console.error(e);}
+  });
+</script>
 </body>
 </html>

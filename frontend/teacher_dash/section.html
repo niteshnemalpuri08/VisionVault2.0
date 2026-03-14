@@ -1,114 +1,81 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mark Attendance</title>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
-    <style>
-        body { font-family: 'Poppins', sans-serif; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; color: white; padding: 20px; margin: 0; box-sizing: border-box; }
-        .container { max-width: 900px; margin: 0 auto; }
-        .header { background: rgba(255,255,255,0.1); padding: 20px; border-radius: 15px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border: 1px solid rgba(255,255,255,0.1); }
-        .back-btn { background: rgba(255,255,255,0.2); color: white; padding: 8px 15px; border-radius: 20px; text-decoration: none; font-size: 0.9em; border: none; cursor: pointer; }
-        .table-container { background: rgba(0,0,0,0.2); border-radius: 15px; padding: 15px; overflow-x: auto; }
-        table { width: 100%; border-collapse: collapse; min-width: 400px; }
-        th, td { padding: 12px; text-align: left; border-bottom: 1px solid rgba(255,255,255,0.1); }
-        th { color: #ffd700; }
-        .submit-btn { background: #4CAF50; color: white; width: 100%; padding: 15px; border: none; border-radius: 10px; font-size: 1.1em; font-weight: bold; cursor: pointer; margin-top: 20px; transition: transform 0.2s; }
-        .submit-btn:active { transform: scale(0.98); }
-    </style>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+  <title>Mark Attendance — GIET Portal</title>
+  <link rel="stylesheet" href="../theme.css">
+  <style>
+    .tbl-wrap{overflow-x:auto;}
+    .att-check{width:20px;height:20px;accent-color:var(--cyan);cursor:pointer;}
+    .submit-btn{width:100%;padding:14px;background:linear-gradient(135deg,#10b981,#059669);border:none;border-radius:12px;color:#fff;font-family:'Plus Jakarta Sans',sans-serif;font-size:1em;font-weight:800;cursor:pointer;margin-top:16px;transition:.25s;}
+    .submit-btn:hover:not(:disabled){transform:translateY(-2px);box-shadow:0 6px 24px rgba(16,185,129,.4);}
+    .submit-btn:disabled{opacity:.6;cursor:not-allowed;}
+    .toolbar{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;padding:14px 18px;border-bottom:1px solid var(--border);}
+  </style>
 </head>
 <body>
-    <div class="container">
-        <div class="header">
-            <div><h2>📝 Mark Attendance</h2><p>Section: <span id="secBadge">...</span></p></div>
-            <a href="index.html" class="back-btn">Back</a>
-        </div>
-        <div class="table-container">
-            <table>
-                <thead><tr><th>Roll No</th><th>Name</th><th>Present?</th></tr></thead>
-                <tbody id="listBody">
-                    <tr><td colspan="3" style="text-align:center;">Loading students...</td></tr>
-                </tbody>
-            </table>
-            <button class="submit-btn" onclick="submitAttendance()">🚀 Submit & Notify Parents</button>
-        </div>
+<div class="page">
+  <div class="topbar">
+    <div>
+      <div class="topbar-title">📝 Mark Attendance</div>
+      <div class="topbar-sub">Section: <span id="sec" style="color:var(--cyan)">—</span> · <span id="dt" style="color:var(--muted)"></span></div>
     </div>
+    <a href="index.html" class="back-btn">← Dashboard</a>
+  </div>
 
-    <script>
-        // Direct session check
-        const user = JSON.parse(localStorage.getItem('user'));
-        if(!user || user.role !== 'teacher') window.location.href = '../login.html';
+  <div class="card" style="padding:0;overflow:hidden">
+    <div class="toolbar">
+      <div style="display:flex;gap:10px">
+        <button class="btn btn-ghost btn-sm" onclick="markAll(true)">✅ All Present</button>
+        <button class="btn btn-danger btn-sm" onclick="markAll(false)">❌ All Absent</button>
+      </div>
+      <span class="badge badge-blue" id="presCnt">Present: 0</span>
+    </div>
+    <div class="tbl-wrap">
+      <table class="tbl">
+        <thead><tr><th>Roll No</th><th>Name</th><th>Current Att.</th><th>Present Today</th></tr></thead>
+        <tbody id="tbody"><tr><td colspan="4" style="text-align:center;padding:30px;color:var(--muted)">Loading…</td></tr></tbody>
+      </table>
+    </div>
+    <div style="padding:16px 18px;border-top:1px solid var(--border)">
+      <button class="submit-btn" id="subBtn" onclick="submitAtt()">🚀 Submit & Notify Parents</button>
+    </div>
+  </div>
+</div>
+<script>
+  const user=JSON.parse(localStorage.getItem('user'));
+  if(!user||user.role!=='teacher')window.location.replace('../login.html');
+  document.getElementById('dt').textContent=new Date().toLocaleDateString('en-IN',{weekday:'long',day:'2-digit',month:'long',year:'numeric'});
 
-        document.addEventListener('DOMContentLoaded', async () => {
-            try {
-                // Fetch students using relative path
-                const res = await fetch('/api/teacher/students', {
-                    method: 'POST', 
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({ username: user.username })
-                });
-                
-                if (!res.ok) throw new Error("Failed to load students");
-                
-                const data = await res.json();
-                document.getElementById('secBadge').textContent = data.section;
-                const tbody = document.getElementById('listBody');
-                tbody.innerHTML = ''; // Clear loading message
+  document.addEventListener('DOMContentLoaded',async()=>{
+    try{
+      const data=await fetch('/api/teacher/students',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:user.username})}).then(r=>r.json());
+      document.getElementById('sec').textContent=data.section;
+      const tb=document.getElementById('tbody'); tb.innerHTML='';
+      data.students.forEach(s=>{
+        const tr=document.createElement('tr');
+        tr.innerHTML=`<td><strong style="color:var(--cyan)">${s.roll.toUpperCase()}</strong></td><td>${s.name}</td><td><span class="badge ${s.attendance<75?'badge-red':'badge-green'}">${s.attendance}%</span></td><td><input type="checkbox" class="att-check" data-roll="${s.roll}" checked></td>`;
+        tb.appendChild(tr);
+      });
+      upd();
+      document.querySelectorAll('.att-check').forEach(c=>c.addEventListener('change',upd));
+    }catch(e){document.getElementById('tbody').innerHTML='<tr><td colspan="4" style="text-align:center;color:#ef4444">Connection error</td></tr>';}
+  });
 
-                if (data.students.length === 0) {
-                    tbody.innerHTML = '<tr><td colspan="3" style="text-align:center;">No students found in this section.</td></tr>';
-                    return;
-                }
+  function upd(){const t=document.querySelectorAll('.att-check').length,p=document.querySelectorAll('.att-check:checked').length;document.getElementById('presCnt').textContent=`Present: ${p} / ${t}`;}
+  function markAll(v){document.querySelectorAll('.att-check').forEach(c=>c.checked=v);upd();}
 
-                data.students.forEach(s => {
-                    tbody.innerHTML += `
-                        <tr>
-                            <td>${s.roll.toUpperCase()}</td>
-                            <td>${s.name}</td>
-                            <td><input type="checkbox" class="att-check" data-roll="${s.roll}" checked style="width:20px; height:20px; cursor:pointer;"></td>
-                        </tr>`;
-                });
-            } catch(e) { 
-                console.error(e);
-                document.getElementById('listBody').innerHTML = '<tr><td colspan="3" style="text-align:center; color:#ff6b6b;">Error connecting to server.</td></tr>';
-            }
-        });
-
-        async function submitAttendance() {
-            if(!confirm("Proceed? Absent students' parents will be notified.")) return;
-            
-            const btn = document.querySelector('.submit-btn');
-            const originalText = btn.textContent;
-            btn.textContent = "Processing..."; 
-            btn.disabled = true;
-            
-            const payload = [];
-            document.querySelectorAll('.att-check').forEach(box => {
-                payload.push({ roll: box.dataset.roll, present: box.checked });
-            });
-            
-            try {
-                const res = await fetch('/api/attendance/bulk', {
-                    method: 'POST', 
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({ attendance: payload })
-                });
-
-                const result = await res.json();
-
-                if (result.success) {
-                    alert(result.message || "Attendance updated successfully!");
-                    window.location.href = 'index.html';
-                } else {
-                    throw new Error(result.error || "Update failed");
-                }
-            } catch(e) { 
-                alert("Error: " + e.message); 
-                btn.disabled = false; 
-                btn.textContent = originalText; 
-            }
-        }
-    </script>
+  async function submitAtt(){
+    if(!confirm("Submit attendance? Absent students' parents will be notified."))return;
+    const btn=document.getElementById('subBtn'); btn.textContent='⌛ Processing…'; btn.disabled=true;
+    const payload=[]; document.querySelectorAll('.att-check').forEach(c=>payload.push({roll:c.dataset.roll,present:c.checked}));
+    try{
+      const res=await fetch('/api/attendance/bulk',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({attendance:payload})}).then(r=>r.json());
+      if(res.success){alert(res.message||'✅ Attendance submitted!');window.location.href='index.html';}
+      else throw new Error(res.error||'Failed');
+    }catch(e){alert('Error: '+e.message);}
+    finally{btn.disabled=false;btn.textContent='🚀 Submit & Notify Parents';}
+  }
+</script>
 </body>
 </html>

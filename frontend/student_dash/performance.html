@@ -1,83 +1,82 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>My Performance</title>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: 'Poppins', sans-serif; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; color: white; padding: 20px; }
-        .container { max-width: 1200px; margin: 0 auto; }
-        .header { background: rgba(255, 255, 255, 0.1); backdrop-filter: blur(10px); border-radius: 15px; padding: 20px; margin-bottom: 30px; text-align: center; position: relative; border: 1px solid rgba(255,255,255,0.1); }
-        .back-btn { position: absolute; top: 20px; left: 20px; background: rgba(255,255,255,0.2); color: white; border: none; padding: 8px 15px; border-radius: 20px; text-decoration: none; font-size: 0.9em; }
-        .dashboard-card { background: rgba(255, 255, 255, 0.1); border-radius: 15px; padding: 25px; margin-bottom: 25px; border: 1px solid rgba(255,255,255,0.1); }
-        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 15px; }
-        .subject-card { background: rgba(255,255,255,0.05); padding: 20px; border-radius: 10px; text-align: center; }
-        .score { font-size: 2em; font-weight: 700; color: #4caf50; display: block; margin: 10px 0; }
-        .rank-badge { background: #FFD700; color: #333; padding: 5px 15px; border-radius: 20px; font-weight: bold; margin-left: 10px; }
-    </style>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+  <title>Performance — GIET Portal</title>
+  <link rel="stylesheet" href="../theme.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    .sub-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(148px,1fr));gap:14px;margin-bottom:24px;}
+    .sub-card{background:var(--glass);border:1px solid var(--border);border-radius:var(--r-md);padding:18px 14px;text-align:center;transition:transform .25s;}
+    .sub-card:hover{transform:translateY(-4px);}
+    .sub-name{font-size:.7em;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;}
+    .sub-val{font-family:'Outfit',sans-serif;font-size:2.1em;font-weight:800;display:block;margin-bottom:6px;}
+    .grade{display:inline-block;padding:3px 10px;border-radius:99px;font-size:.7em;font-weight:700;}
+    .g-a{background:rgba(16,185,129,.2);color:#6ee7b7;border:1px solid rgba(16,185,129,.3);}
+    .g-b{background:rgba(91,124,255,.2);color:#a5b4fc;border:1px solid rgba(91,124,255,.3);}
+    .g-c{background:rgba(245,158,11,.2);color:#fde68a;border:1px solid rgba(245,158,11,.3);}
+    .g-d{background:rgba(239,68,68,.2);color:#fca5a5;border:1px solid rgba(239,68,68,.3);}
+    .rank-pill{background:linear-gradient(135deg,#b45309,#fbbf24);color:#18100a;padding:5px 16px;border-radius:99px;font-weight:800;font-size:.85em;}
+  </style>
 </head>
 <body>
-    <div class="container">
-        <div class="header">
-            <a href="index.html" class="back-btn">← Back</a>
-            <h1>📊 My Grades</h1>
-            <p style="margin-top:10px">Current Rank: <span class="rank-badge" id="rankDisplay">#--</span></p>
-        </div>
-
-        <div class="dashboard-card">
-            <h3>Subject Wise Marks</h3>
-            <div class="grid" id="marksGrid">Loading...</div>
-        </div>
-
-        <div class="dashboard-card">
-            <h3>Performance Curve</h3>
-            <div style="height:300px"><canvas id="marksChart"></canvas></div>
-        </div>
+<div class="page page-narrow">
+  <div class="topbar">
+    <div>
+      <div class="topbar-title">📊 My Grades</div>
+      <div class="topbar-sub">Current Rank: <span class="rank-pill" id="rnk">#--</span></div>
     </div>
+    <a href="index.html" class="back-btn">← Dashboard</a>
+  </div>
 
-    <script>
-        const user = JSON.parse(localStorage.getItem('user'));
-        if(!user) window.location.href = '../login.html';
+  <div class="sub-grid" id="marksGrid"></div>
 
-        document.addEventListener('DOMContentLoaded', async () => {
-            try {
-                const res = await fetch(`/api/students/${user.username}`);
-                const data = await res.json();
-                
-                // Set Rank
-                document.getElementById('rankDisplay').textContent = `#${data.rank || 'N/A'}`;
+  <div class="card">
+    <div class="card-hd"><span class="card-title">Performance Curve</span></div>
+    <div class="chart-box"><canvas id="mChart"></canvas></div>
+  </div>
+</div>
+<script>
+  const user = JSON.parse(localStorage.getItem('user'));
+  if (!user) window.location.replace('../login.html');
 
-                const subjects = [
-                    { name: 'Mathematics', val: data.math_marks },
-                    { name: 'Physics', val: data.physics_marks },
-                    { name: 'Chemistry', val: data.chemistry_marks },
-                    { name: 'Comp. Sci', val: data.cs_marks },
-                    { name: 'English', val: data.english_marks },
-                    { name: 'Phys. Edu', val: data.pe_marks }
-                ];
+  const gradeLabel = v => v>=90?'A+':v>=80?'A':v>=70?'B':v>=60?'C':'D';
+  const gradeClass = v => v>=80?'g-a':v>=70?'g-b':v>=60?'g-c':'g-d';
+  const gradeColor = v => v>=80?'var(--cyan)':v>=60?'var(--gold)':'var(--red)';
 
-                document.getElementById('marksGrid').innerHTML = subjects.map(m => `
-                    <div class="subject-card">
-                        <h4>${m.name}</h4>
-                        <span class="score" style="color:${m.val<40?'#ff6b6b':'#4caf50'}">${m.val}</span>
-                    </div>`).join('');
+  document.addEventListener('DOMContentLoaded', async () => {
+    try {
+      const data = await fetch(`/api/students/${user.username}`).then(r=>r.json());
+      document.getElementById('rnk').textContent = '#' + (data.rank||'N/A');
+      const subjects = [
+        {name:'Mathematics',  val:data.math_marks},
+        {name:'Physics',      val:data.physics_marks},
+        {name:'Chemistry',    val:data.chemistry_marks},
+        {name:'Comp. Science',val:data.cs_marks},
+        {name:'English',      val:data.english_marks},
+        {name:'Phys. Ed',     val:data.pe_marks}
+      ];
+      document.getElementById('marksGrid').innerHTML = subjects.map(s=>`
+        <div class="sub-card" style="border-bottom:3px solid ${gradeColor(s.val)}">
+          <div class="sub-name">${s.name}</div>
+          <span class="sub-val" style="color:${gradeColor(s.val)}">${s.val}</span>
+          <span class="grade ${gradeClass(s.val)}">${gradeLabel(s.val)}</span>
+        </div>`).join('');
 
-                new Chart(document.getElementById('marksChart'), {
-                    type: 'line',
-                    data: {
-                        labels: subjects.map(m => m.name),
-                        datasets: [{ 
-                            label: 'Marks', data: subjects.map(m => m.val), 
-                            borderColor: '#fff', backgroundColor: 'rgba(255,255,255,0.1)', fill: true, tension: 0.4
-                        }]
-                    },
-                    options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true, max: 100, ticks: { color:'white'} }, x: { ticks: { color:'white'} } } }
-                });
-            } catch(e) { console.error(e); }
-        });
-    </script>
+      new Chart(document.getElementById('mChart'),{
+        type:'line',
+        data:{
+          labels:subjects.map(s=>s.name),
+          datasets:[{label:'Marks',data:subjects.map(s=>s.val),
+            borderColor:'rgba(91,124,255,.9)',backgroundColor:'rgba(91,124,255,.1)',
+            fill:true,tension:.4,pointBackgroundColor:'#5b7cff',pointRadius:5}]
+        },
+        options:{responsive:true,maintainAspectRatio:false,
+          scales:{y:{beginAtZero:true,max:100,grid:{color:'rgba(255,255,255,.06)'},ticks:{color:'rgba(154,171,216,.8)'}},x:{grid:{display:false},ticks:{color:'rgba(154,171,216,.8)'}}},
+          plugins:{legend:{display:false}}}
+      });
+    } catch(e){ console.error(e); }
+  });
+</script>
 </body>
 </html>

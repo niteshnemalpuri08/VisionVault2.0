@@ -1,5 +1,5 @@
-from backend.server import app
-from backend.models import User, db
+from server import app
+from models import User, db
 
 with app.app_context():
     users = User.query.all()

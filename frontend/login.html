@@ -1,141 +1,183 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <link rel="manifest" href="/manifest.json">
-<meta name="theme-color" content="#764ba2">
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login - GIET University</title>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
-    <style>
-        body { display: flex; justify-content: center; align-items: center; height: 100vh; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); font-family: 'Poppins', sans-serif; margin: 0; }
-        .login-card { background: white; padding: 35px; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); width: 90%; max-width: 380px; text-align: center; transition: all 0.3s ease; }
-        
-        .logo { width: 130px; margin-bottom: 15px; }
-        h2 { margin-top: 0; color: #333; font-size: 1.4em; margin-bottom: 20px; }
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login — GIET University Portal</title>
+  <link rel="manifest" href="/manifest.json">
+  <meta name="theme-color" content="#06091a">
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    *,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+    :root{
+      --bg:#06091a;--glass:rgba(255,255,255,.06);--border:rgba(255,255,255,.10);
+      --accent:#5b7cff;--cyan:#22d3ee;--txt:#dde4ff;--muted:rgba(154,171,216,.55);
+    }
+    body{
+      font-family:'Plus Jakarta Sans',sans-serif;
+      background:var(--bg);color:var(--txt);
+      min-height:100vh;display:grid;place-items:center;
+      overflow:hidden;position:relative;
+    }
+    body::before{
+      content:'';position:fixed;inset:0;z-index:0;pointer-events:none;
+      background:
+        radial-gradient(ellipse 80% 60% at 10% 10%,rgba(91,124,255,.22) 0%,transparent 55%),
+        radial-gradient(ellipse 65% 50% at 90% 85%,rgba(124,58,237,.18) 0%,transparent 55%),
+        radial-gradient(ellipse 50% 45% at 55% 50%,rgba(34,211,238,.08) 0%,transparent 60%);
+    }
+    body::after{
+      content:'';position:fixed;inset:0;z-index:0;pointer-events:none;
+      background-image:linear-gradient(rgba(91,124,255,.03) 1px,transparent 1px),linear-gradient(90deg,rgba(91,124,255,.03) 1px,transparent 1px);
+      background-size:52px 52px;
+    }
+    .orb{position:fixed;border-radius:50%;filter:blur(80px);opacity:.35;pointer-events:none;z-index:0;animation:drift 12s ease-in-out infinite alternate;}
+    .o1{width:420px;height:420px;background:#3d4fd4;top:-120px;left:-80px}
+    .o2{width:280px;height:280px;background:#7c3aed;bottom:-80px;right:-60px;animation-delay:-5s}
+    .o3{width:180px;height:180px;background:#0891b2;top:45%;left:55%;animation-delay:-3s}
+    @keyframes drift{from{transform:translate(0,0) scale(1)}to{transform:translate(28px,18px) scale(1.07)}}
 
-        input { width: 100%; padding: 14px; margin: 10px 0; border: 1px solid #ddd; border-radius: 10px; box-sizing: border-box; font-family: 'Poppins', sans-serif; font-size: 14px; outline: none; }
-        input:focus { border-color: #667eea; }
-        
-        .role-label { text-align: left; font-size: 0.85em; margin: 15px 0 8px 5px; color: #555; font-weight: 600; }
-        .role-container { display: flex; justify-content: space-between; gap: 8px; margin-bottom: 20px; }
-        .role-btn { flex: 1; padding: 12px 5px; background: #f8f9fa; color: #666; border: 2px solid #eee; border-radius: 10px; font-size: 11px; font-weight: 600; cursor: pointer; transition: all 0.3s ease; }
-        .role-btn.selected { background: #e8f0fe; border-color: #667eea; color: #667eea; transform: scale(1.05); }
+    .card{
+      position:relative;z-index:10;
+      width:min(430px,calc(100vw - 32px));
+      background:rgba(10,15,44,.8);
+      backdrop-filter:blur(32px);-webkit-backdrop-filter:blur(32px);
+      border:1px solid var(--border);border-radius:28px;padding:40px 36px;
+      box-shadow:0 24px 80px rgba(0,0,0,.6),0 0 0 1px rgba(91,124,255,.12);
+      animation:rise .55s cubic-bezier(.22,1,.36,1) both;
+    }
+    @keyframes rise{from{opacity:0;transform:translateY(32px)}to{opacity:1;transform:none}}
 
-        #loginBtn, #faceLoginBtn { width: 100%; padding: 15px; border: none; border-radius: 12px; font-size: 16px; font-weight: 600; cursor: pointer; transition: 0.3s; margin-top: 10px; }
-        
-        #loginBtn { background: #667eea; color: white; box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3); }
-        #loginBtn:hover { background: #764ba2; transform: translateY(-2px); }
-        
-        #faceLoginBtn { background: #f0f2f5; color: #444; border: 1px solid #ddd; display: flex; align-items: center; justify-content: center; gap: 10px; }
-        #faceLoginBtn:hover { background: #e4e6e9; }
+    .logo-wrap{display:flex;flex-direction:column;align-items:center;gap:10px;margin-bottom:30px;}
+    .logo-img{
+      width:80px;height:80px;border-radius:18px;object-fit:contain;
+      background:rgba(255,255,255,.95);
+      border:2px solid rgba(91,124,255,.35);padding:6px;
+      box-shadow:0 0 0 5px rgba(91,124,255,.14),0 8px 24px rgba(0,0,0,.4);
+    }
+    .logo-fallback{
+      width:80px;height:80px;border-radius:18px;
+      background:linear-gradient(135deg,var(--accent),#7c3aed);
+      display:none;grid;place-items:center;font-size:2em;
+      box-shadow:0 0 0 5px rgba(91,124,255,.14);
+    }
+    .logo-name{
+      font-family:'Outfit',sans-serif;font-size:1.4em;font-weight:900;letter-spacing:-.5px;
+      background:linear-gradient(90deg,#fff 0%,#a5b4fc 100%);
+      -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+      text-align:center;
+    }
+    .logo-sub{font-size:.7em;color:var(--muted);letter-spacing:2px;text-transform:uppercase;}
 
-        .error { color: #e74c3c; margin-top: 15px; display: none; font-size: 0.85em; font-weight: bold; padding: 10px; background: #fdf2f2; border-radius: 8px; }
-        .footer-note { margin-top: 25px; font-size: 0.8em; color: #888; border-top: 1px solid #eee; padding-top: 15px; }
-        
-        .divider { margin: 20px 0; display: flex; align-items: center; color: #aaa; font-size: 12px; }
-        .divider::before, .divider::after { content: ""; flex: 1; height: 1px; background: #eee; margin: 0 10px; }
-    </style>
+    .field{position:relative;margin-bottom:13px;}
+    .field .ico{position:absolute;left:14px;top:50%;transform:translateY(-50%);font-size:1em;pointer-events:none;color:var(--muted);}
+    .field input{
+      width:100%;padding:13px 14px 13px 42px;
+      background:rgba(255,255,255,.055);border:1px solid var(--border);border-radius:12px;
+      color:var(--txt);font-family:'Plus Jakarta Sans',sans-serif;font-size:.94em;outline:none;transition:all .2s;
+    }
+    .field input:focus{border-color:var(--accent);background:rgba(91,124,255,.08);box-shadow:0 0 0 3px rgba(91,124,255,.18);}
+    .field input::placeholder{color:var(--muted);}
+
+    .role-lbl{font-size:.7em;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1.2px;margin:18px 0 10px 2px;}
+    .roles{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:20px;}
+    .role-btn{
+      padding:12px 6px;background:rgba(255,255,255,.04);border:1px solid var(--border);
+      border-radius:12px;color:var(--muted);font-family:'Plus Jakarta Sans',sans-serif;
+      font-size:.78em;font-weight:700;cursor:pointer;transition:all .2s;text-align:center;
+    }
+    .role-btn .em{display:block;font-size:1.5em;margin-bottom:3px;}
+    .role-btn:hover{border-color:rgba(91,124,255,.4);color:var(--txt);background:rgba(91,124,255,.08);}
+    .role-btn.sel{background:rgba(91,124,255,.2);border-color:var(--accent);color:#fff;box-shadow:0 0 0 3px rgba(91,124,255,.18);}
+
+    .btn-signin{
+      width:100%;padding:14px;
+      background:linear-gradient(135deg,var(--accent),#7c3aed);
+      border:none;border-radius:14px;color:#fff;
+      font-family:'Plus Jakarta Sans',sans-serif;font-size:1em;font-weight:800;
+      cursor:pointer;position:relative;overflow:hidden;
+      box-shadow:0 6px 24px rgba(91,124,255,.45);transition:all .25s;
+    }
+    .btn-signin:hover:not(:disabled){transform:translateY(-2px);box-shadow:0 10px 32px rgba(91,124,255,.6);}
+    .btn-signin:disabled{opacity:.6;cursor:not-allowed;}
+    .btn-signin::after{content:'';position:absolute;inset:0;background:linear-gradient(135deg,rgba(255,255,255,.15),transparent);border-radius:inherit;}
+
+    .divider{display:flex;align-items:center;gap:10px;margin:16px 0;color:var(--muted);font-size:.78em;}
+    .divider::before,.divider::after{content:'';flex:1;height:1px;background:var(--border);}
+
+    .btn-face{
+      width:100%;padding:12px;background:rgba(255,255,255,.04);border:1px solid var(--border);
+      border-radius:14px;color:var(--txt);font-family:'Plus Jakarta Sans',sans-serif;
+      font-size:.9em;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;transition:all .2s;
+    }
+    .btn-face:hover{background:rgba(255,255,255,.09);border-color:rgba(255,255,255,.2);}
+
+    .err{
+      display:none;background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.3);
+      border-radius:10px;padding:10px 14px;color:#fca5a5;font-size:.83em;
+      margin-top:14px;animation:shake .35s ease;
+    }
+    @keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+    .foot{margin-top:22px;text-align:center;font-size:.72em;color:var(--muted);border-top:1px solid var(--border);padding-top:14px;}
+  </style>
 </head>
 <body>
-
-    <div class="login-card">
-        <img src="gietlogo.jpg" alt="GIET University Logo" class="logo">
-        
-        <h2>Portal Login</h2>
-        
-        <div id="passwordSection">
-            <input type="text" id="username" placeholder="Enter Username">
-            <input type="password" id="password" placeholder="Enter Password">
-
-            <div class="role-label">Select Profile:</div>
-            <div class="role-container">
-                <button class="role-btn" onclick="selectRole('student', this)">STUDENT</button>
-                <button class="role-btn" onclick="selectRole('teacher', this)">TEACHER</button>
-                <button class="role-btn" onclick="selectRole('parent', this)">PARENT</button>
-            </div>
-
-            <button id="loginBtn" onclick="handleLogin()">Sign In</button>
-
-            <div class="divider">OR</div>
-
-            <button id="faceLoginBtn" onclick="window.location.href='face_login.html'">
-                <span>👤</span> Login with Face ID
-            </button>
-        </div>
-        
-        <p class="error" id="errorMsg"></p>
-        
-        <div class="footer-note">
-            © 2026 GIET University ERP System
-        </div>
+  <div class="orb o1"></div><div class="orb o2"></div><div class="orb o3"></div>
+  <div class="card">
+    <div class="logo-wrap">
+      <img src="gietlogo.jpg" alt="GIET University" class="logo-img"
+           onerror="this.style.display='none';document.getElementById('lf').style.display='grid'">
+      <div class="logo-fallback" id="lf">🎓</div>
+      <div class="logo-name">GIET University</div>
+      <div class="logo-sub">AI Student Portal · 2026</div>
     </div>
 
-    <script>
-        let selectedRole = "";
+    <div class="field">
+      <input type="text" id="username" placeholder="Username / Roll Number" autocomplete="username">
+      <span class="ico">👤</span>
+    </div>
+    <div class="field">
+      <input type="password" id="password" placeholder="Password" onkeydown="if(event.key==='Enter')handleLogin()">
+      <span class="ico">🔒</span>
+    </div>
 
-        function selectRole(role, btn) {
-            selectedRole = role;
-            document.querySelectorAll('.role-btn').forEach(b => b.classList.remove('selected'));
-            btn.classList.add('selected');
-            document.getElementById('errorMsg').style.display = 'none';
-        }
+    <div class="role-lbl">Select Your Role</div>
+    <div class="roles">
+      <button class="role-btn" onclick="selectRole('student',this)"><span class="em">🎒</span>Student</button>
+      <button class="role-btn" onclick="selectRole('teacher',this)"><span class="em">👨‍🏫</span>Teacher</button>
+      <button class="role-btn" onclick="selectRole('parent',this)"><span class="em">👨‍👩‍👧</span>Parent</button>
+    </div>
 
-        localStorage.clear();
-
-        async function handleLogin() {
-            const userIn = document.getElementById('username').value.trim();
-            const passIn = document.getElementById('password').value.trim();
-            const btn = document.getElementById('loginBtn');
-            const err = document.getElementById('errorMsg');
-
-            if (!userIn || !passIn || !selectedRole) {
-                err.innerText = !selectedRole ? "⚠️ Please select a profile role" : "⚠️ Username and password required";
-                err.style.display = 'block';
-                return;
-            }
-
-            btn.disabled = true;
-            btn.innerText = "Authenticating...";
-            err.style.display = 'none';
-
-            try {
-                const res = await fetch('/auth/login', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ username: userIn, password: passIn })
-                });
-
-                const data = await res.json();
-
-                if (data.success) {
-                    if (data.role !== selectedRole) {
-                        throw new Error(`Unauthorized: Account not registered as ${selectedRole.toUpperCase()}`);
-                    }
-
-                    localStorage.setItem('user', JSON.stringify(data));
-                    btn.innerText = "Verified! Redirecting...";
-                    btn.style.background = "#2ecc71";
-
-                    setTimeout(() => {
-                        let targetPage = "";
-                        if (data.role === 'student') targetPage = 'student_dash/index.html';
-                        else if (data.role === 'teacher') targetPage = 'teacher_dash/index.html';
-                        else if (data.role === 'parent') targetPage = 'parent_dash/index.html';
-                        window.location.replace(targetPage);
-                    }, 800);
-
-                } else {
-                    throw new Error(data.message || "Invalid Username or Password");
-                }
-            } catch (error) {
-                err.innerText = "❌ " + error.message;
-                err.style.display = 'block';
-                btn.disabled = false;
-                btn.innerText = "Sign In";
-                btn.style.background = "#667eea";
-            }
-        }
-    </script>
+    <button class="btn-signin" id="loginBtn" onclick="handleLogin()">Sign In →</button>
+    <div class="divider">or</div>
+    <button class="btn-face" onclick="window.location.href='face_login.html'">👤 Login with Face ID</button>
+    <p class="err" id="errMsg"></p>
+    <div class="foot">© 2026 GIET University &nbsp;·&nbsp; Secure Portal</div>
+  </div>
+  <script>
+    let role='';
+    localStorage.removeItem('user');
+    function selectRole(r,btn){role=r;document.querySelectorAll('.role-btn').forEach(b=>b.classList.remove('sel'));btn.classList.add('sel');document.getElementById('errMsg').style.display='none';}
+    async function handleLogin(){
+      const u=document.getElementById('username').value.trim();
+      const p=document.getElementById('password').value.trim();
+      const btn=document.getElementById('loginBtn');
+      if(!u||!p){showErr('Username and password are required.');return;}
+      if(!role){showErr('Please select your profile role.');return;}
+      btn.disabled=true;btn.textContent='Authenticating…';
+      try{
+        const res=await fetch('/auth/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:u,password:p})});
+        const data=await res.json();
+        if(data.success){
+          if(data.role!==role)throw new Error(`Account not registered as ${role.toUpperCase()}.`);
+          localStorage.setItem('user',JSON.stringify(data));
+          btn.textContent='✅ Redirecting…';btn.style.background='linear-gradient(135deg,#059669,#10b981)';
+          const pages={student:'student_dash/index.html',teacher:'teacher_dash/index.html',parent:'parent_dash/index.html'};
+          setTimeout(()=>window.location.replace(pages[data.role]),700);
+        }else throw new Error(data.message||'Invalid credentials.');
+      }catch(e){showErr(e.message);btn.disabled=false;btn.textContent='Sign In →';btn.style.background='';}
+    }
+    function showErr(m){const e=document.getElementById('errMsg');e.textContent='⚠️ '+m;e.style.display='block';}
+  </script>
 </body>
 </html>

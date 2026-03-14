@@ -1,76 +1,89 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Performance Predictor</title>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
-    <style>
-        body { font-family: 'Poppins', sans-serif; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; color: white; padding: 20px; margin: 0; box-sizing: border-box; }
-        .container { max-width: 900px; margin: 0 auto; }
-        .header { background: rgba(255,255,255,0.1); padding: 20px; border-radius: 15px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; border: 1px solid rgba(255,255,255,0.1); }
-        .back-btn { background: rgba(255,255,255,0.2); color: white; padding: 8px 20px; border-radius: 20px; text-decoration: none; }
-        .pred-card { background: linear-gradient(145deg, rgba(233, 30, 99, 0.4), rgba(0,0,0,0.2)); border-left: 6px solid #E91E63; padding: 40px; border-radius: 20px; text-align: center; margin-bottom: 30px; }
-        .pred-val { font-size: 5em; font-weight: 700; margin: 10px 0; }
-        .card { background: rgba(255,255,255,0.1); padding: 25px; border-radius: 15px; border: 1px solid rgba(255,255,255,0.1); }
-        .tip { margin-top: 10px; font-size: 1em; background: rgba(0,0,0,0.2); padding: 15px; border-radius: 10px; }
-    </style>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+  <title>AI Predictor — GIET Portal</title>
+  <link rel="stylesheet" href="../theme.css">
+  <style>
+    .pred-hero{
+      background:linear-gradient(135deg,rgba(91,124,255,.18),rgba(124,58,237,.12));
+      border:1px solid rgba(91,124,255,.35);border-radius:var(--r-xl);
+      padding:48px 32px;text-align:center;margin-bottom:24px;
+    }
+    .pred-lbl{font-size:.72em;color:var(--muted);text-transform:uppercase;letter-spacing:2px;margin-bottom:12px;}
+    .pred-num{
+      font-family:'Outfit',sans-serif;font-size:5.5em;font-weight:900;line-height:1;
+      background:linear-gradient(135deg,#fff,var(--accent-lt,#8da3ff));
+      -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+    }
+    .pred-trend{margin-top:12px;font-size:1em;font-weight:600;}
+    .two-col{display:grid;grid-template-columns:1fr 1fr;gap:20px;}
+    .stat-row{display:flex;justify-content:space-around;margin:20px 0;}
+    .mini-stat .val{font-family:'Outfit',sans-serif;font-size:2.2em;font-weight:800;display:block;line-height:1;}
+    .mini-stat .lbl{font-size:.72em;color:var(--muted);text-transform:uppercase;}
+    .tip{background:rgba(91,124,255,.07);border:1px solid rgba(91,124,255,.18);border-radius:var(--r-sm);padding:14px;font-size:.875em;color:var(--txt2);line-height:1.6;margin-top:14px;}
+    @media(max-width:640px){.two-col{grid-template-columns:1fr}}
+  </style>
 </head>
 <body>
-    <div class="container">
-        <div class="header">
-            <div>
-                <h2>🔮 AI Predictor</h2>
-                <p>Analyzing: <strong id="studentLabel" style="color:#FFD700">...</strong></p>
-            </div>
-            <a href="index.html" class="back-btn">Back</a>
-        </div>
-
-        <div class="pred-card">
-            <div class="pred-label">Predicted Final Semester Score</div>
-            <div class="pred-val" id="finalScore">--%</div>
-            <p id="trendMsg">Calculating probabilities...</p>
-        </div>
-
-        <div class="card">
-            <h3>📊 Analysis Data</h3>
-            <div style="margin-top:20px; display: flex; justify-content: space-around;">
-                <div><small>Current Avg</small><h2 id="currAvg">--</h2></div>
-                <div><small>Attendance</small><h2 id="currAtt">--%</h2></div>
-            </div>
-            <div id="aiAdvice" class="tip" style="margin-top:20px">Please wait...</div>
-        </div>
+<div class="page page-narrow">
+  <div class="topbar">
+    <div>
+      <div class="topbar-title">🔮 AI Predictor</div>
+      <div class="topbar-sub">Analyzing: <strong id="sLbl" style="color:var(--gold)">…</strong></div>
     </div>
+    <a href="index.html" class="back-btn">← Dashboard</a>
+  </div>
 
-    <script>
-        const user = JSON.parse(localStorage.getItem('user'));
-        if(!user) window.location.href = '../login.html';
+  <div class="pred-hero">
+    <div class="pred-lbl">Predicted Final Semester Score</div>
+    <div class="pred-num" id="predScore">--%</div>
+    <p class="pred-trend" id="trendMsg">Calculating…</p>
+  </div>
 
-        document.addEventListener('DOMContentLoaded', async () => {
-            document.getElementById('studentLabel').textContent = user.name;
-            try {
-                const res = await fetch(`/api/predict/${user.username}`);
-                const data = await res.json();
-                
-                const pred = data.predicted_final_score;
-                const curr = data.current_avg;
+  <div class="two-col">
+    <div class="card">
+      <div class="card-hd"><span class="card-title">📊 Analysis Data</span></div>
+      <div class="stat-row">
+        <div class="mini-stat"><span class="val" id="currAvg">--</span><span class="lbl">Current Avg</span></div>
+        <div class="mini-stat"><span class="val" id="currAtt">--%</span><span class="lbl">Attendance</span></div>
+      </div>
+      <div class="tip" id="aiAdvice">Analyzing your data…</div>
+    </div>
+    <div class="card">
+      <div class="card-hd"><span class="card-title">📈 Trend Visual</span></div>
+      <div class="chart-box"><canvas id="pChart"></canvas></div>
+    </div>
+  </div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+  const user = JSON.parse(localStorage.getItem('user'));
+  if (!user) window.location.replace('../login.html');
+  document.getElementById('sLbl').textContent = user.name;
 
-                document.getElementById('finalScore').textContent = pred + "%";
-                document.getElementById('currAvg').textContent = curr;
-                document.getElementById('currAtt').textContent = data.current_attendance + "%";
+  document.addEventListener('DOMContentLoaded', async () => {
+    try {
+      const data = await fetch(`/api/predict/${user.username}`).then(r=>r.json());
+      const pred = data.predicted_final_score, curr = data.current_avg, att = data.current_attendance;
+      document.getElementById('predScore').textContent = pred + '%';
+      document.getElementById('currAvg').textContent  = curr;
+      document.getElementById('currAtt').textContent  = att + '%';
+      document.getElementById('trendMsg').innerHTML   = pred >= curr ? '🚀 You are on an <strong>UPWARD</strong> trend!' : '⚠️ Risk of <strong>Grade Drop</strong> detected.';
+      document.getElementById('aiAdvice').innerHTML   = pred >= curr
+        ? '✨ Consistent marks and good attendance are projected to lift your final result.'
+        : '💡 Lower attendance or inconsistent marks are pulling your prediction down. Focus on upcoming tests!';
 
-                const msg = document.getElementById('trendMsg');
-                const advice = document.getElementById('aiAdvice');
-
-                if(pred >= curr) {
-                    msg.innerHTML = "🚀 You are on an <strong>UPWARD</strong> trend!";
-                    advice.innerHTML = "✨ AI Analysis: Your consistent marks and good attendance are projected to increase your final result.";
-                } else {
-                    msg.innerHTML = "⚠️ Risk of <strong>Grade Drop</strong> detected.";
-                    advice.innerHTML = "💡 AI Tip: Lower attendance or inconsistent mid-term marks are dragging your prediction down. Focus on upcoming tests!";
-                }
-            } catch(e) { console.error(e); }
-        });
-    </script>
+      new Chart(document.getElementById('pChart'),{
+        type:'bar',data:{labels:['Current Avg','Predicted Final'],
+          datasets:[{data:[curr,pred],backgroundColor:['rgba(34,211,238,.6)','rgba(91,124,255,.65)'],borderRadius:10}]},
+        options:{responsive:true,maintainAspectRatio:false,
+          scales:{y:{beginAtZero:true,max:100,grid:{color:'rgba(255,255,255,.06)'},ticks:{color:'rgba(154,171,216,.8)'}},
+            x:{grid:{display:false},ticks:{color:'rgba(154,171,216,.8)'}}},
+          plugins:{legend:{display:false}}}
+      });
+    } catch(e){ console.error(e); }
+  });
+</script>
 </body>
 </html>

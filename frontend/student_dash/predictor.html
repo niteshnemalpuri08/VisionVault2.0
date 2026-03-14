@@ -1,168 +1,98 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Attendance Calculator</title>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
-    <style>
-        /* UNIFIED PURPLE THEME */
-        body { margin: 0; font-family: 'Poppins', sans-serif; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; color: white; padding: 20px; box-sizing: border-box; }
-        .container { max-width: 1000px; margin: 0 auto; }
-        .header { background: rgba(255, 255, 255, 0.1); backdrop-filter: blur(10px); border-radius: 15px; padding: 20px; margin-bottom: 20px; text-align: center; border: 1px solid rgba(255,255,255,0.1); }
-        .back-btn { background: rgba(255, 255, 255, 0.2); color: white; border: none; padding: 10px 20px; border-radius: 25px; cursor: pointer; margin-bottom: 20px; text-decoration: none; display: inline-block; font-size: 0.9em; }
-        
-        .calculator-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; }
-        .calculator-section { background: rgba(255, 255, 255, 0.1); padding: 25px; border-radius: 15px; border: 1px solid rgba(255,255,255,0.1); }
-        
-        .input-group label { display: block; margin-bottom: 8px; font-weight: 600; font-size: 0.85em; opacity: 0.9; }
-        .input-group input, .input-group select { width: 100%; padding: 12px; border-radius: 8px; border: none; margin-bottom: 15px; text-align: center; background: white; color: #333; font-family: inherit; font-size: 1em; box-sizing: border-box; }
-        
-        .calc-btn { width: 100%; padding: 12px; border-radius: 10px; border: none; color: white; font-weight: 600; cursor: pointer; margin-bottom: 10px; transition: 0.3s; font-size: 0.95em; }
-        .calc-btn:active { transform: scale(0.98); }
-
-        .result-card { background: rgba(0,0,0,0.3); padding: 20px; border-radius: 12px; margin-top: 15px; text-align: center; border-left: 5px solid #fff; animation: slideIn 0.4s ease; }
-        .result-value { font-size: 2.2em; font-weight: bold; display: block; margin-top: 5px; }
-        .current-stat { font-size: 1em; color: #FFD700; margin-bottom: 10px; display: block; font-weight: 600; }
-
-        @keyframes slideIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-    </style>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+  <title>Bunk Calculator — GIET Portal</title>
+  <link rel="stylesheet" href="../theme.css">
+  <style>
+    .two-col{display:grid;grid-template-columns:1fr 1fr;gap:20px;}
+    .calc-btn{width:100%;padding:12px;border-radius:10px;border:none;color:#fff;font-weight:700;cursor:pointer;margin-bottom:10px;transition:.25s;font-family:'Plus Jakarta Sans',sans-serif;font-size:.9em;}
+    .calc-btn:hover{transform:translateY(-2px);}
+    .result{background:rgba(0,0,0,.25);padding:18px;border-radius:12px;margin-top:14px;text-align:center;border-left:4px solid var(--c,var(--border));animation:slideIn .35s ease;}
+    .result-num{font-family:'Outfit',sans-serif;font-size:2.2em;font-weight:900;display:block;margin:5px 0;}
+    .result-sub{font-size:.78em;color:var(--muted);}
+    @keyframes slideIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+    @media(max-width:640px){.two-col{grid-template-columns:1fr}}
+  </style>
 </head>
 <body>
-    <div class="container">
-        <a href="index.html" class="back-btn">← Back to Dashboard</a>
-        <div class="header">
-            <h1 style="margin:0;">🧮 Attendance Calculator</h1>
-            <p style="margin:5px 0 0 0; opacity:0.7; font-size:0.9em;">Manual Mode: Enter your own values</p>
-        </div>
+<div class="page">
+  <div class="topbar">
+    <div>
+      <div class="topbar-title">🧮 Attendance Calculator</div>
+      <div class="topbar-sub">Smart attendance planning tool</div>
+    </div>
+    <a href="index.html" class="back-btn">← Dashboard</a>
+  </div>
 
-        <div class="calculator-grid">
-            <div class="calculator-section">
-                <h3 style="text-align:center; margin-top:0;">📈 Status Analyzer</h3>
-                
-                <div class="input-group">
-                    <label>Total Classes Conducted</label>
-                    <input type="number" id="totalInput" placeholder="e.g. 50">
-                    
-                    <label>Total Classes You Attended</label>
-                    <input type="number" id="attendedInput" placeholder="e.g. 40">
-                    
-                    <label>Your Target Percentage (%)</label>
-                    <select id="targetPercent">
-                        <option value="75">75% (Minimum)</option>
-                        <option value="80" selected>80% (Safe)</option>
-                        <option value="85">85% (Scholar)</option>
-                        <option value="90">90% (Distinction)</option>
-                    </select>
-                </div>
-
-                <button class="calc-btn" style="background:#4caf50" onclick="calculateNeeded()">Calculate Needed Classes</button>
-                <button class="calc-btn" style="background:#FF9800" onclick="calculateBunkable()">Calculate Bunkable Classes</button>
-                
-                <div id="calculatorResults"></div>
-            </div>
-
-            <div class="calculator-section">
-                <h3 style="text-align:center; margin-top:0;">🔮 Trend Predictor</h3>
-                <p style="font-size:0.8em; opacity:0.8; text-align:center; margin-bottom:15px;">Forecast your final % based on upcoming behavior</p>
-                
-                <div class="input-group">
-                    <label>Upcoming Classes (Next 10-20 days)</label>
-                    <input type="number" id="futureClasses" value="15">
-                    
-                    <label>How regular will you be? (%)</label>
-                    <select id="futureAttendance">
-                        <option value="100">100% (I'll attend every class)</option>
-                        <option value="80" selected>80% (Regular Student)</option>
-                        <option value="50">50% (Will miss many)</option>
-                        <option value="0">0% (Going on Leave)</option>
-                    </select>
-                </div>
-                <button class="calc-btn" style="background:#9C27B0" onclick="predictFinalAttendance()">Predict My Final %</button>
-                <div id="predictionResults"></div>
-            </div>
-        </div>
+  <div class="two-col">
+    <div class="card">
+      <div class="card-hd"><span class="card-title">📈 Status Analyzer</span></div>
+      <div class="form-grp"><label class="form-lbl">Total Classes Conducted</label><input type="number" class="form-ctrl" id="tot" placeholder="e.g. 50"></div>
+      <div class="form-grp"><label class="form-lbl">Classes You Attended</label><input type="number" class="form-ctrl" id="att" placeholder="e.g. 40"></div>
+      <div class="form-grp">
+        <label class="form-lbl">Target Percentage</label>
+        <select class="form-ctrl" id="tgt">
+          <option value="75">75% (Minimum)</option>
+          <option value="80" selected>80% (Safe)</option>
+          <option value="85">85% (Scholar)</option>
+          <option value="90">90% (Distinction)</option>
+        </select>
+      </div>
+      <button class="calc-btn" style="background:linear-gradient(135deg,#10b981,#059669)" onclick="calcNeeded()">Classes Needed →</button>
+      <button class="calc-btn" style="background:linear-gradient(135deg,#f59e0b,#d97706)" onclick="calcBunkable()">Can I Bunk?</button>
+      <div id="calcRes"></div>
     </div>
 
-    <script>
-        // Check if logged in (Session Guard)
-        const user = JSON.parse(localStorage.getItem('user'));
-        if(!user) window.location.href = '../login.html';
+    <div class="card">
+      <div class="card-hd"><span class="card-title">🔮 Trend Predictor</span></div>
+      <div class="form-grp"><label class="form-lbl">Upcoming Classes (next 10–20 days)</label><input type="number" class="form-ctrl" id="fut" value="15"></div>
+      <div class="form-grp">
+        <label class="form-lbl">How Regular Will You Be?</label>
+        <select class="form-ctrl" id="futRate">
+          <option value="100">100% — Every class</option>
+          <option value="80" selected>80% — Regular</option>
+          <option value="50">50% — Many misses</option>
+          <option value="0">0% — On leave</option>
+        </select>
+      </div>
+      <button class="calc-btn" style="background:linear-gradient(135deg,#7c3aed,#5b7cff);margin-top:8px" onclick="predictFinal()">Predict Final %</button>
+      <div id="predRes"></div>
+    </div>
+  </div>
+</div>
+<script>
+  const user=JSON.parse(localStorage.getItem('user'));
+  if(!user)window.location.replace('../login.html');
 
-        function getInputs() {
-            return {
-                attended: parseInt(document.getElementById('attendedInput').value),
-                total: parseInt(document.getElementById('totalInput').value),
-                target: parseInt(document.getElementById('targetPercent').value) / 100
-            };
-        }
+  function getIn(){return{a:parseInt(document.getElementById('att').value),t:parseInt(document.getElementById('tot').value),tgt:parseInt(document.getElementById('tgt').value)/100};}
 
-        function calculateNeeded() {
-            const { attended, total, target } = getInputs();
-            const results = document.getElementById('calculatorResults');
+  function calcNeeded(){
+    const{a,t,tgt}=getIn(), el=document.getElementById('calcRes');
+    if(isNaN(a)||isNaN(t)){el.innerHTML=res('⚠️ Enter valid values','rgba(245,158,11,.1)','#f59e0b');return;}
+    const curr=(a/t)*100;
+    if(curr>=tgt*100){el.innerHTML=res(`✅ Already at ${curr.toFixed(1)}% — Target met!`,'rgba(16,185,129,.1)','#10b981');}
+    else{const need=Math.ceil((tgt*t-a)/(1-tgt));el.innerHTML=res(`Attend next <span class="result-num">${need}</span> classes without leave.`,'rgba(34,211,238,.1)','var(--cyan)');}
+  }
 
-            if (isNaN(attended) || isNaN(total)) {
-                alert("Please enter values in both fields!");
-                return;
-            }
+  function calcBunkable(){
+    const{a,t,tgt}=getIn(), el=document.getElementById('calcRes');
+    if(isNaN(a)||isNaN(t))return;
+    const curr=(a/t)*100;
+    if(curr<tgt*100){el.innerHTML=res('❌ Cannot bunk — already below target.','rgba(239,68,68,.1)','#ef4444');return;}
+    const bunk=Math.floor((a/tgt)-t);
+    if(bunk<=0)el.innerHTML=res('⚠️ On the edge — don\'t miss any more.','rgba(245,158,11,.1)','#f59e0b');
+    else el.innerHTML=res(`You can safely miss <span class="result-num">${bunk}</span> classes.`,'rgba(16,185,129,.1)','#10b981');
+  }
 
-            const currentPct = (attended / total) * 100;
-            let resultHTML = `<span class="current-stat">Current Attendance: ${currentPct.toFixed(1)}%</span>`;
+  function predictFinal(){
+    const{a,t}=getIn(), fut=parseInt(document.getElementById('fut').value), rate=parseInt(document.getElementById('futRate').value)/100, el=document.getElementById('predRes');
+    if(isNaN(a)||isNaN(t)||isNaN(fut))return;
+    const final=((a+Math.round(fut*rate))/(t+fut)*100).toFixed(1);
+    el.innerHTML=res(`Forecasted Final: <span class="result-num">${final}%</span>`,'rgba(124,58,237,.1)','#a78bfa');
+  }
 
-            if (currentPct >= target * 100) {
-                resultHTML += `<div class="result-card" style="border-color:#4caf50">✅ Target Met!<br>You are already safe at this rate.</div>`;
-            } else {
-                // Recover Formula: (Attended + X) / (Total + X) = Target
-                const needed = Math.ceil((target * total - attended) / (1 - target));
-                resultHTML += `<div class="result-card" style="border-color:#4caf50">To reach ${target*100}%, attend next<span class="result-value">${needed} Classes</span>without any leaves.</div>`;
-            }
-            results.innerHTML = resultHTML;
-        }
-
-        function calculateBunkable() {
-            const { attended, total, target } = getInputs();
-            const results = document.getElementById('calculatorResults');
-
-            if (isNaN(attended) || isNaN(total)) return;
-
-            const currentPct = (attended / total) * 100;
-            let resultHTML = `<span class="current-stat">Current Attendance: ${currentPct.toFixed(1)}%</span>`;
-
-            if (currentPct < target * 100) {
-                resultHTML += `<div class="result-card" style="border-color:#f44336">❌ Bunking NOT possible.<br>You are already below your target.</div>`;
-            } else {
-                // Bunk Formula: Attended / (Total + X) = Target
-                const bunkable = Math.floor((attended / target) - total);
-                if (bunkable <= 0) {
-                    resultHTML += `<div class="result-card" style="border-color:#f44336">⚠️ Warning!<br>You are exactly on the edge. Don't miss any.</div>`;
-                } else {
-                    resultHTML += `<div class="result-card" style="border-color:#FF9800">You can safely miss<span class="result-value">${bunkable} Classes</span></div>`;
-                }
-            }
-            results.innerHTML = resultHTML;
-        }
-
-        function predictFinalAttendance() {
-            const { attended, total } = getInputs();
-            const future = parseInt(document.getElementById('futureClasses').value);
-            const rate = parseInt(document.getElementById('futureAttendance').value) / 100;
-            const results = document.getElementById('predictionResults');
-
-            if (isNaN(attended) || isNaN(total) || isNaN(future)) {
-                alert("Please fill in current and future values!");
-                return;
-            }
-            
-            const futureAttended = Math.round(future * rate);
-            const finalPct = ((attended + futureAttended) / (total + future)) * 100;
-            
-            results.innerHTML = `
-                <div class="result-card" style="border-color:#9C27B0">
-                    Forecasted Attendance:
-                    <span class="result-value">${finalPct.toFixed(1)}%</span>
-                    <small>Based on attending ${futureAttended} more classes.</small>
-                </div>`;
-        }
-    </script>
+  function res(html,bg,border){return`<div class="result" style="background:${bg};--c:${border}"><div style="font-size:.875em;line-height:1.6">${html}</div></div>`;}
+</script>
 </body>
 </html>

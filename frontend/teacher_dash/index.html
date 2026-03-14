@@ -1,207 +1,238 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
-    <title>Smart Teacher Dashboard</title>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <style>
-        /* CORE REFINEMENTS */
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        
-        body { 
-            font-family: 'Poppins', sans-serif; 
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
-            min-height: 100vh; 
-            color: white; 
-            padding: 20px;
-        }
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Teacher Dashboard — GIET Portal</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=Sora:wght@700;800&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
 
-        .container { max-width: 1000px; margin: 0 auto; }
+    :root {
+      --bg:      #08101e;
+      --glass:   rgba(255,255,255,0.06);
+      --border:  rgba(255,255,255,0.10);
+      --accent:  #7c3aed;
+      --teal:    #0ea5e9;
+      --green:   #22c55e;
+      --amber:   #f59e0b;
+      --red:     #ef4444;
+      --text:    #e8eaf6;
+      --muted:   rgba(180,200,255,0.5);
+      --r:       16px;
+    }
 
-        /* ADVANCED GLASS-MORPHISM HEADER */
-        .header { 
-            background: rgba(255, 255, 255, 0.12); 
-            backdrop-filter: blur(20px); 
-            -webkit-backdrop-filter: blur(20px);
-            border-radius: 20px; 
-            padding: 25px 30px; 
-            margin-bottom: 25px; 
-            display: flex; 
-            justify-content: space-between; 
-            align-items: center; 
-            border: 1px solid rgba(255,255,255,0.2);
-            box-shadow: 0 8px 32px rgba(0,0,0,0.15);
-        }
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+    }
 
-        .header h1 { font-size: 1.5em; font-weight: 700; letter-spacing: -0.5px; }
-        .section-tag { 
-            background: rgba(255,255,255,0.2); 
-            padding: 4px 12px; 
-            border-radius: 8px; 
-            font-size: 0.85em; 
-            margin-top: 5px; 
-            display: inline-block;
-        }
+    body::before {
+      content: '';
+      position: fixed; inset: 0; z-index: 0;
+      background: radial-gradient(ellipse 70% 50% at 0% 0%,  rgba(124,58,237,0.2) 0%, transparent 55%),
+                  radial-gradient(ellipse 60% 40% at 100% 100%, rgba(14,165,233,0.15) 0%, transparent 55%);
+      pointer-events: none;
+    }
+    body::after {
+      content: '';
+      position: fixed; inset: 0; z-index: 0;
+      background-image: linear-gradient(rgba(124,58,237,0.03) 1px, transparent 1px),
+                        linear-gradient(90deg, rgba(124,58,237,0.03) 1px, transparent 1px);
+      background-size: 48px 48px;
+      pointer-events: none;
+    }
 
-        .logout-btn { 
-            background: rgba(255, 71, 87, 0.2); 
-            border: 1px solid rgba(255, 71, 87, 0.3); 
-            padding: 10px 20px; 
-            color: #ff6b6b; 
-            border-radius: 12px; 
-            cursor: pointer; 
-            font-weight: 600; 
-            transition: 0.3s;
-        }
+    .wrap { position: relative; z-index: 1; max-width: 1100px; margin: 0 auto; padding: 24px 20px 48px; }
 
-        .logout-btn:hover { background: #ff4757; color: white; }
+    /* ── Header ── */
+    .hdr {
+      display: flex; align-items: center; justify-content: space-between;
+      background: var(--glass); backdrop-filter: blur(24px);
+      border: 1px solid var(--border); border-radius: 22px;
+      padding: 22px 30px; margin-bottom: 28px;
+      flex-wrap: wrap; gap: 14px;
+      animation: fadeDown 0.45s ease both;
+    }
+    @keyframes fadeDown { from { opacity: 0; transform: translateY(-14px); } to { opacity: 1; transform: none; } }
 
-        /* ANALYTICS GRID */
-        .stats-grid { 
-            display: grid; 
-            grid-template-columns: repeat(3, 1fr); 
-            gap: 15px; 
-            margin-bottom: 25px; 
-        }
+    .hdr-info h1 {
+      font-family: 'Sora', sans-serif; font-size: 1.4em; font-weight: 800;
+      background: linear-gradient(90deg,#fff,#c4b5fd);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+    }
+    .hdr-info .sub { font-size: 0.8em; color: var(--muted); margin-top: 3px; }
+    .section-tag {
+      background: rgba(124,58,237,0.25); border: 1px solid rgba(124,58,237,0.45);
+      color: #c4b5fd; padding: 5px 14px; border-radius: 20px;
+      font-size: 0.8em; font-weight: 700; margin-top: 6px; display: inline-block;
+    }
 
-        .stat-card { 
-            background: rgba(255, 255, 255, 0.08); 
-            backdrop-filter: blur(10px);
-            padding: 20px; 
-            border-radius: 20px; 
-            text-align: center; 
-            border: 1px solid rgba(255,255,255,0.1);
-            transition: transform 0.3s;
-        }
+    .btn {
+      padding: 10px 20px; border-radius: 12px; border: none;
+      font-family: 'DM Sans', sans-serif; font-size: 0.875em; font-weight: 600;
+      cursor: pointer; transition: all 0.2s;
+    }
+    .btn-danger { background: rgba(239,68,68,0.15); border: 1px solid rgba(239,68,68,0.3); color: #fca5a5; }
+    .btn-danger:hover { background: rgba(239,68,68,0.3); color: #fff; }
 
-        .stat-card:hover { transform: translateY(-5px); background: rgba(255,255,255,0.12); }
+    /* ── Stats ── */
+    .stats {
+      display: grid; grid-template-columns: repeat(3, 1fr);
+      gap: 16px; margin-bottom: 28px;
+    }
+    .stat {
+      background: var(--glass); border: 1px solid var(--border); border-radius: var(--r);
+      padding: 22px 20px; text-align: center; position: relative; overflow: hidden;
+      transition: transform 0.25s; animation: fadeUp 0.45s ease both;
+    }
+    .stat:hover { transform: translateY(-4px); }
+    .stat::before {
+      content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
+      background: var(--c, linear-gradient(90deg,var(--accent),var(--teal)));
+    }
+    .stat:nth-child(1) { --c: linear-gradient(90deg,#4f6ef7,#38bdf8); animation-delay: 0.05s; }
+    .stat:nth-child(2) { --c: linear-gradient(90deg,#22c55e,#0ea5e9); animation-delay: 0.10s; }
+    .stat:nth-child(3) { --c: linear-gradient(90deg,#ef4444,#f97316); animation-delay: 0.15s; }
+    .stat-val {
+      font-family: 'Sora', sans-serif; font-size: 2.2em; font-weight: 800;
+      display: block; line-height: 1; margin-bottom: 5px;
+    }
+    .stat-lbl { font-size: 0.72em; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; }
 
-        .stat-val { font-size: 2em; font-weight: 800; display: block; line-height: 1.2; }
-        .stat-label { font-size: 0.75em; opacity: 0.7; font-weight: 500; text-transform: uppercase; letter-spacing: 1px; }
+    @keyframes fadeUp { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: none; } }
 
-        /* INTERACTIVE NAVIGATION CARDS */
-        .nav-grid { 
-            display: grid; 
-            grid-template-columns: repeat(2, 1fr); 
-            gap: 20px; 
-        }
+    /* ── Nav grid ── */
+    .grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 18px; }
+    .nav-card {
+      background: var(--glass); border: 1px solid var(--border); border-radius: 22px;
+      text-decoration: none; color: var(--text);
+      display: flex; align-items: center; gap: 20px;
+      padding: 26px 24px;
+      position: relative; overflow: hidden;
+      transition: all 0.28s cubic-bezier(0.175,0.885,0.32,1.275);
+      animation: fadeUp 0.45s ease both;
+      border-left: 4px solid var(--c2, var(--border));
+    }
+    .nav-card:hover {
+      transform: translateX(6px) scale(1.01);
+      background: rgba(255,255,255,0.10);
+      box-shadow: 0 12px 36px rgba(0,0,0,0.35);
+    }
+    .ic {
+      font-size: 1.8em;
+      width: 56px; height: 56px; border-radius: 16px; flex-shrink: 0;
+      background: rgba(255,255,255,0.08);
+      display: grid; place-items: center;
+    }
+    .nav-card strong { font-size: 1em; font-weight: 700; display: block; margin-bottom: 3px; }
+    .nav-card small  { font-size: 0.8em; color: var(--muted); }
 
-        .nav-card { 
-            background: rgba(255, 255, 255, 0.06); 
-            padding: 30px 20px; 
-            border-radius: 24px; 
-            text-decoration: none; 
-            color: white; 
-            text-align: center; 
-            border: 1px solid rgba(255,255,255,0.1);
-            display: flex; 
-            flex-direction: column; 
-            align-items: center; 
-            transition: 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-            position: relative;
-            overflow: hidden;
-        }
+    .nav-card:nth-child(1) { --c2: #22c55e; animation-delay: 0.08s; }
+    .nav-card:nth-child(2) { --c2: #4f6ef7; animation-delay: 0.12s; }
+    .nav-card:nth-child(3) { --c2: #f59e0b; animation-delay: 0.16s; }
+    .nav-card:nth-child(4) { --c2: #ec4899; animation-delay: 0.20s; }
 
-        .nav-card::before {
-            content: '';
-            position: absolute;
-            top: 0; left: 0; width: 100%; height: 5px;
-            background: var(--accent-color);
-        }
+    /* Alert badge */
+    .alert-badge {
+      background: var(--red); color: #fff;
+      border-radius: 999px; padding: 2px 9px;
+      font-size: 0.75em; font-weight: 700;
+      margin-left: auto; flex-shrink: 0;
+    }
 
-        .nav-card:hover { 
-            transform: scale(1.03); 
-            background: rgba(255, 255, 255, 0.15); 
-            box-shadow: 0 15px 35px rgba(0,0,0,0.2);
-        }
-
-        .nav-icon { 
-            font-size: 2.8em; 
-            margin-bottom: 15px; 
-            filter: drop-shadow(0 5px 15px rgba(0,0,0,0.2));
-        }
-
-        .nav-card strong { font-size: 1.1em; font-weight: 600; }
-
-        @media (max-width: 500px) { 
-            .stats-grid { grid-template-columns: 1fr; } 
-            .nav-grid { grid-template-columns: 1fr; }
-        }
-    </style>
+    @media (max-width: 600px) {
+      .hdr   { flex-direction: column; text-align: center; }
+      .stats { grid-template-columns: 1fr; }
+      .grid  { grid-template-columns: 1fr; }
+    }
+  </style>
 </head>
 <body>
-    <div class="container">
-        <div class="header">
-            <div>
-                <h1 id="welcomeMsg">Teacher</h1>
-                <div class="section-tag">📍 Section: <span id="sectionBadge">...</span></div>
-            </div>
-            <button class="logout-btn" onclick="logout()">Sign Out</button>
-        </div>
+<div class="wrap">
 
-        <div class="stats-grid">
-            <div class="stat-card">
-                <span class="stat-val" id="totalCount">--</span>
-                <span class="stat-label">Enrolled Students</span>
-            </div>
-            <div class="stat-card">
-                <span class="stat-val" id="avgAtt">--%</span>
-                <span class="stat-label">Class Avg. Attendance</span>
-            </div>
-            <div class="stat-card" style="border-bottom: 4px solid #ff6b6b;">
-                <span class="stat-val" id="riskCount" style="color:#ff6b6b">--</span>
-                <span class="stat-label">At-Risk Alerts</span>
-            </div>
-        </div>
-
-        <div class="nav-grid">
-            <a href="section.html" class="nav-card" style="--accent-color: #4CAF50;">
-                <span class="nav-icon">📝</span><strong>Take Attendance</strong>
-            </a>
-            <a href="analytics.html" class="nav-card" style="--accent-color: #2196F3;">
-                <span class="nav-icon">📊</span><strong>Visual Analytics</strong>
-            </a>
-            <a href="alerts.html" class="nav-card" style="--accent-color: #FF9800;">
-                <span class="nav-icon">📢</span><strong>Parent Alerts</strong>
-            </a>
-            <a href="chat.html" class="nav-card" style="--accent-color: #E91E63;">
-                <span class="nav-icon">💬</span><strong>Parent Chat</strong>
-            </a>
-        </div>
+  <div class="hdr">
+    <div class="hdr-info">
+      <h1 id="welcomeMsg">Teacher Dashboard 👨‍🏫</h1>
+      <p class="sub">GIET University · Academic Year 2025–26</p>
+      <div class="section-tag" id="sectionBadge">📍 Section —</div>
     </div>
+    <button class="btn btn-danger" onclick="logout()">🚪 Sign Out</button>
+  </div>
 
-    
+  <div class="stats">
+    <div class="stat">
+      <span class="stat-val" id="totalCount">--</span>
+      <span class="stat-lbl">👥 Enrolled Students</span>
+    </div>
+    <div class="stat">
+      <span class="stat-val" id="avgAtt">--%</span>
+      <span class="stat-lbl">📅 Avg Attendance</span>
+    </div>
+    <div class="stat">
+      <span class="stat-val" id="riskCount" style="color:#ef4444">--</span>
+      <span class="stat-lbl">🚨 At-Risk Alerts</span>
+    </div>
+  </div>
 
-    <script>
-        // Logic remains strictly identical to the original provided code
-        const user = JSON.parse(localStorage.getItem('user'));
-        if(!user || user.role !== 'teacher') { window.location.href = '../login.html'; }
+  <div class="grid">
+    <a href="section.html"   class="nav-card">
+      <div class="ic">📝</div>
+      <div><strong>Mark Attendance</strong><small>Record today's class</small></div>
+    </a>
+    <a href="analytics.html" class="nav-card">
+      <div class="ic">📊</div>
+      <div><strong>Visual Analytics</strong><small>Charts & trends</small></div>
+    </a>
+    <a href="alerts.html"    class="nav-card" id="alertsCard">
+      <div class="ic">⚠️</div>
+      <div><strong>At-Risk Alerts</strong><small>Students below 75%</small></div>
+      <span class="alert-badge" id="alertBadge" style="display:none">0</span>
+    </a>
+    <a href="chat.html"      class="nav-card">
+      <div class="ic">💬</div>
+      <div><strong>Parent Chat</strong><small>Direct messaging</small></div>
+    </a>
+  </div>
 
-        document.addEventListener('DOMContentLoaded', async () => {
-            if(!user) return;
-            document.getElementById('welcomeMsg').textContent = `Welcome, ${user.name.split(' ')[0]}`;
+</div>
 
-            try {
-                const res = await fetch('/api/teacher/students', {
-                    method: 'POST', headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({ username: user.username })
-                });
-                if(res.status === 401) { logout(); return; }
-                const data = await res.json();
-                if(data.students) {
-                    document.getElementById('sectionBadge').textContent = data.section;
-                    document.getElementById('totalCount').textContent = data.students.length;
-                    const totalAtt = data.students.reduce((sum, s) => sum + s.attendance, 0);
-                    const avg = Math.round(totalAtt / data.students.length) || 0;
-                    document.getElementById('avgAtt').textContent = avg + '%';
-                    // Automated At-Risk logic as per synopsis objectives
-                    document.getElementById('riskCount').textContent = data.students.filter(s => s.attendance < 75).length;
-                }
-            } catch(e) { console.error(e); }
-        });
+<script>
+  const user = JSON.parse(localStorage.getItem('user'));
+  if (!user || user.role !== 'teacher') { window.location.replace('../login.html'); }
 
-        function logout() { localStorage.clear(); window.location.href = '../login.html'; }
-    </script>
+  document.getElementById('welcomeMsg').textContent = `Welcome, ${user.name?.split(' ')[0] || 'Teacher'} 👨‍🏫`;
+
+  document.addEventListener('DOMContentLoaded', async () => {
+    try {
+      const res  = await fetch('/api/teacher/students', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username: user.username })
+      });
+      if (res.status === 401) { logout(); return; }
+      const data = await res.json();
+
+      document.getElementById('sectionBadge').textContent = `📍 Section: ${data.section}`;
+      document.getElementById('totalCount').textContent   = data.students.length;
+
+      const totalAtt = data.students.reduce((s, x) => s + x.attendance, 0);
+      const avg      = data.students.length ? Math.round(totalAtt / data.students.length) : 0;
+      document.getElementById('avgAtt').textContent = avg + '%';
+
+      const risk = data.students.filter(s => s.attendance < 75).length;
+      document.getElementById('riskCount').textContent = risk;
+      if (risk > 0) {
+        const badge = document.getElementById('alertBadge');
+        badge.textContent = risk;
+        badge.style.display = 'inline-block';
+      }
+    } catch (e) { console.error(e); }
+  });
+
+  function logout() { localStorage.clear(); window.location.replace('../login.html'); }
+</script>
 </body>
 </html>

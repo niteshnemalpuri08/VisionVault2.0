@@ -1,135 +1,74 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Upload Payment Proof</title>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
-    <style>
-        body { font-family: 'Poppins', sans-serif; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; padding: 20px; color: white; margin: 0; }
-        .container { max-width: 600px; margin: 0 auto; }
-        .header { text-align: center; margin-bottom: 20px; }
-        .back-btn { background: rgba(255,255,255,0.2); color: white; padding: 8px 20px; border-radius: 20px; text-decoration: none; font-size: 0.9em; display: inline-block; margin-bottom: 10px; border: none; cursor: pointer;}
-        .pay-card { background: white; color: #333; border-radius: 20px; padding: 30px; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.3); }
-        .input-group { margin-bottom: 20px; text-align: left; }
-        .input-label { font-size: 0.9em; font-weight: bold; color: #555; display: block; margin-bottom: 5px; }
-        .styled-input { width: 100%; padding: 12px; border: 2px solid #ddd; border-radius: 10px; font-size: 1em; outline: none; transition: 0.3s; box-sizing: border-box; }
-        .styled-input:focus { border-color: #6c5ce7; }
-        .qr-container { background: #f8f9fa; padding: 10px; border: 2px dashed #ccc; border-radius: 10px; display: inline-block; margin-bottom: 15px;}
-        .qr-img { width: 180px; height: 180px; object-fit: contain; }
-        .upi-text { font-family: monospace; background: #eee; padding: 5px 10px; border-radius: 5px; font-weight: bold; }
-        .action-btn { background: #6c5ce7; color: white; border: none; padding: 15px 30px; border-radius: 30px; font-size: 1.1em; font-weight: 600; width: 100%; cursor: pointer; transition: 0.3s; }
-        .action-btn:disabled { background: #b2bec3; cursor: not-allowed; }
-        .status-msg { margin-top: 15px; font-size: 0.9em; font-weight: bold; min-height: 20px; }
-    </style>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+  <title>Pay Fees — GIET Portal</title>
+  <link rel="stylesheet" href="../theme.css">
+  <style>
+    .two-col{display:grid;grid-template-columns:1fr 1fr;gap:20px;}
+    .qr-box{background:rgba(255,255,255,.95);padding:16px;border-radius:16px;display:inline-block;margin-bottom:14px;}
+    .qr-box img{width:180px;height:180px;object-fit:contain;display:block;}
+    .upi-code{font-family:monospace;background:rgba(255,255,255,.08);padding:4px 12px;border-radius:8px;color:var(--cyan);font-size:.88em;}
+    .step-lbl{font-size:.72em;color:var(--muted);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:12px;font-weight:700;}
+    @media(max-width:640px){.two-col{grid-template-columns:1fr}}
+  </style>
 </head>
 <body>
-    <div class="container">
-        <div class="header">
-            <a href="index.html" class="back-btn">← Back to Dashboard</a>
-            <h2>💳 Payment & Verification</h2>
-        </div>
-
-        <div class="pay-card">
-            <div style="border-bottom: 1px solid #eee; padding-bottom: 15px; margin-bottom: 15px;">
-                <p style="margin:0 0 10px 0; color:#666;">Step 1: Scan & Pay</p>
-                <div class="qr-container">
-                    <img src="../upi_qr.jpg.jpeg" class="qr-img" alt="QR" onerror="this.src='https://via.placeholder.com/180?text=QR+Not+Found'">
-                </div>
-                <div>UPI: <span class="upi-text">niteshnemalpuri17@okicici</span></div>
-            </div>
-
-            <div class="input-group">
-                <label class="input-label">Amount Paid (₹)</label>
-                <input type="number" id="payAmount" class="styled-input" placeholder="e.g. 50000">
-            </div>
-
-            <div class="input-group">
-                <label class="input-label">UPI Transaction ID (12 Digits)</label>
-                <input type="text" id="txnId" class="styled-input" placeholder="e.g. 402819330122">
-            </div>
-
-            <div class="input-group">
-                <label class="input-label">Upload Payment Screenshot</label>
-                <input type="file" id="fileInput" accept="image/*" class="styled-input">
-            </div>
-
-            <button class="action-btn" id="verifyBtn" onclick="submitProof()">
-                Verify & Get Receipt
-            </button>
-            <p class="status-msg" id="statusText"></p>
-        </div>
+<div class="page page-narrow">
+  <div class="topbar">
+    <div>
+      <div class="topbar-title">💳 Fee Payment</div>
+      <div class="topbar-sub">Secure payment with receipt</div>
     </div>
+    <a href="index.html" class="back-btn">← Dashboard</a>
+  </div>
 
-    <script>
-        // REPLACE your old auth check with this simple version
-const userJson = localStorage.getItem('user');
-if (!userJson) {
-    window.location.replace('../login.html');
-}
-const user = JSON.parse(userJson);
-// Now use 'user.username' throughout the file
+  <div class="two-col">
+    <div class="card" style="text-align:center">
+      <div class="step-lbl">Step 1: Scan & Pay</div>
+      <div class="qr-box">
+        <img src="../upi_qr.jpg.jpeg" alt="QR Code" onerror="this.src='https://via.placeholder.com/180?text=QR'">
+      </div>
+      <div>UPI: <span class="upi-code">niteshnemalpuri17@okicici</span></div>
+    </div>
+    <div class="card">
+      <div class="step-lbl">Step 2: Submit Proof</div>
+      <div class="form-grp">
+        <label class="form-lbl">Amount Paid (₹)</label>
+        <input type="number" class="form-ctrl" id="amt" placeholder="e.g. 50000">
+      </div>
+      <div class="form-grp">
+        <label class="form-lbl">UPI Transaction ID</label>
+        <input type="text" class="form-ctrl" id="txn" placeholder="12-digit ID">
+      </div>
+      <div class="form-grp">
+        <label class="form-lbl">Upload Screenshot</label>
+        <input type="file" class="form-ctrl" id="file" accept="image/*">
+      </div>
+      <button class="btn btn-primary" style="width:100%;justify-content:center;padding:13px;margin-top:4px" id="verBtn" onclick="submit()">
+        Verify & Get Receipt
+      </button>
+      <p id="statusTxt" style="text-align:center;margin-top:12px;font-size:.85em;min-height:18px"></p>
+    </div>
+  </div>
+</div>
+<script>
+  const user = JSON.parse(localStorage.getItem('user'));
+  if (!user) window.location.replace('../login.html');
 
-        async function submitProof() {
-    const btn = document.getElementById('verifyBtn');
-    const txt = document.getElementById('statusText');
-    
-    // 1. Get Session Data (Reliable way)
-    const user = JSON.parse(localStorage.getItem('user'));
-    if (!user) {
-        window.location.replace('../login.html');
-        return;
-    }
-
-    // 2. Get Form Values
-    const amount = document.getElementById('payAmount').value;
-    const txnId = document.getElementById('txnId').value;
-    const fileInput = document.getElementById('fileInput');
-
-    // 3. Simple Validation
-    if(!amount || !txnId || fileInput.files.length === 0) {
-        alert("Please fill all fields and upload the screenshot.");
-        return;
-    }
-
-    // 4. Prepare Data
-    const formData = new FormData();
-    formData.append('username', user.username);
-    formData.append('amount', amount);
-    formData.append('txn_id', txnId);
-    formData.append('screenshot', fileInput.files[0]); 
-
-    // 5. UI Loading State
-    btn.disabled = true;
-    btn.textContent = "⌛ Processing... Please Wait";
-    txt.textContent = "Uploading proof to server...";
-
-    try {
-        const res = await fetch('/api/payment/upload_proof', {
-            method: 'POST',
-            body: formData // Note: No Content-Type header needed for FormData
-        });
-
-        const data = await res.json();
-
-        if(data.success) {
-            btn.textContent = "✅ Success!";
-            btn.style.background = "#2ecc71";
-            txt.textContent = `Receipt sent to parent's email!`;
-            txt.style.color = "#2ecc71";
-            setTimeout(() => window.location.href = "index.html", 3000);
-        } else {
-            throw new Error(data.message || "Verification Failed");
-        }
-    } catch(e) {
-        console.error(e);
-        btn.disabled = false;
-        btn.textContent = "Verify & Get Receipt";
-        btn.style.background = "#e74c3c";
-        txt.textContent = "❌ Error: " + e.message;
-        txt.style.color = "red";
-    }
-}
-    </script>
+  async function submit() {
+    const btn=document.getElementById('verBtn'), txt=document.getElementById('statusTxt');
+    const amt=document.getElementById('amt').value, txn=document.getElementById('txn').value, file=document.getElementById('file').files[0];
+    if (!amt||!txn||!file){ txt.textContent='⚠️ Please fill all fields and upload screenshot.';txt.style.color='#fca5a5';return;}
+    const fd=new FormData();
+    fd.append('username',user.username);fd.append('amount',amt);fd.append('txn_id',txn);fd.append('screenshot',file);
+    btn.disabled=true;btn.textContent='⌛ Processing…';txt.textContent='Uploading…';txt.style.color='';
+    try{
+      const data=await fetch('/api/payment/upload_proof',{method:'POST',body:fd}).then(r=>r.json());
+      if(data.success){btn.textContent='✅ Done';btn.style.background='linear-gradient(135deg,#059669,#10b981)';txt.textContent='Receipt sent to parent email!';txt.style.color='#6ee7b7';setTimeout(()=>window.location.href='index.html',3000);}
+      else throw new Error(data.message||'Failed');
+    }catch(e){btn.disabled=false;btn.textContent='Verify & Get Receipt';btn.style.background='';txt.textContent='❌ '+e.message;txt.style.color='#fca5a5';}
+  }
+</script>
 </body>
 </html>

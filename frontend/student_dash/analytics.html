@@ -1,182 +1,93 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Rankings & Analytics</title>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <style>
-        body { font-family: 'Poppins', sans-serif; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; color: white; padding: 20px; margin: 0; box-sizing: border-box; }
-        .container { max-width: 1000px; margin: 0 auto; }
-        
-        .header { 
-            background: rgba(255,255,255,0.1); padding: 20px; border-radius: 15px; 
-            display: flex; justify-content: space-between; align-items: center; 
-            margin-bottom: 20px; border: 1px solid rgba(255,255,255,0.1); flex-wrap: wrap; gap: 15px;
-        }
-        
-        .btn-group { display: flex; gap: 10px; flex-wrap: wrap; }
-
-        .back-btn { 
-            background: rgba(255,255,255,0.2); border: none; padding: 10px 20px; 
-            color: white; border-radius: 20px; text-decoration: none; cursor: pointer; transition: 0.3s;
-            font-size: 0.9em; display: inline-block;
-        }
-        .back-btn:hover { background: rgba(255,255,255,0.3); }
-
-        .feature-btn {
-            background: linear-gradient(135deg, #FFD700, #FFA500); 
-            color: #333; font-weight: 700; border: none; padding: 10px 20px; 
-            border-radius: 20px; cursor: pointer; transition: transform 0.2s;
-            box-shadow: 0 4px 15px rgba(255, 215, 0, 0.4); font-size: 0.9em;
-        }
-        .feature-btn:hover { transform: scale(1.05); }
-        
-        .rank-card { 
-            background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%); 
-            padding: 40px; border-radius: 20px; text-align: center; margin-bottom: 30px;
-            color: #333; box-shadow: 0 10px 25px rgba(0,0,0,0.3);
-        }
-        .rank-num { font-size: 5em; font-weight: 800; line-height: 1; margin: 10px 0; }
-        .rank-label { font-size: 1.2em; font-weight: 600; opacity: 0.9; }
-        
-        .chart-box { background: rgba(0,0,0,0.3); padding: 25px; border-radius: 15px; height: 400px; border: 1px solid rgba(255,255,255,0.1); }
-
-        @media (max-width: 600px) {
-            .header { flex-direction: column; text-align: center; }
-            .rank-num { font-size: 3.5em; }
-            .chart-box { height: 300px; padding: 15px; }
-        }
-    </style>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+  <title>Rankings — GIET Portal</title>
+  <link rel="stylesheet" href="../theme.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    .rank-hero{
+      text-align:center;
+      background:linear-gradient(135deg,rgba(251,191,36,.15),rgba(245,158,11,.06));
+      border:1px solid rgba(251,191,36,.3);border-radius:var(--r-xl);
+      padding:44px 30px;margin-bottom:24px;position:relative;overflow:hidden;
+    }
+    .rank-hero::before{content:'🏆';position:absolute;font-size:8em;opacity:.05;right:-20px;top:-20px;}
+    .rank-hero .lbl{font-size:.72em;color:rgba(251,191,36,.7);text-transform:uppercase;letter-spacing:2px;margin-bottom:8px;}
+    .rank-num{
+      font-family:'Outfit',sans-serif;font-size:5em;font-weight:900;line-height:1;
+      background:linear-gradient(135deg,var(--gold),#fde68a);
+      -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+    }
+    .rank-sub{margin-top:10px;font-size:.92em;color:var(--txt2);}
+  </style>
 </head>
 <body>
-    <div class="container">
-        <div class="header">
-            <h2 style="margin:0;">🏆 Rankings</h2>
-            <div class="btn-group">
-                <button class="feature-btn" onclick="downloadAnalyticsReport()">📄 Report</button>
-                <a href="index.html" class="back-btn">Back</a>
-            </div>
-        </div>
-
-        <div class="rank-card">
-            <div class="rank-label">Your Class Rank</div>
-            <div class="rank-num">#<span id="rankVal">--</span></div>
-            <p style="font-weight: 600;">Top <span id="topPercent">--%</span> of Section <span id="secVal">--</span></p>
-        </div>
-
-        <div class="chart-box">
-            <h3 style="margin-bottom:20px; text-align:center; font-size: 1.1em;">Performance: You vs. Class Average</h3>
-            <canvas id="compChart"></canvas>
-        </div>
+<div class="page page-narrow">
+  <div class="topbar">
+    <div>
+      <div class="topbar-title">🏆 Class Rankings</div>
+      <div class="topbar-sub">Your standing among section peers</div>
     </div>
+    <div style="display:flex;gap:10px">
+      <button class="btn btn-gold btn-sm" onclick="dlReport(this)">📄 Report</button>
+      <a href="index.html" class="back-btn">← Dashboard</a>
+    </div>
+  </div>
 
-    <script>
-        // --- 1. DIRECT SESSION CHECK (STOPS REDIRECT LOOP) ---
-        const user = JSON.parse(localStorage.getItem('user'));
-        if (!user || user.role !== 'student') {
-            window.location.href = '../login.html';
-        }
+  <div class="rank-hero">
+    <div class="lbl">Your Class Rank</div>
+    <div class="rank-num">#<span id="rnk">--</span></div>
+    <div class="rank-sub">Top <span id="pct">--%</span> of Section <span id="sec">--</span></div>
+  </div>
 
-        document.addEventListener('DOMContentLoaded', async () => {
-            if(!user) return;
+  <div class="card">
+    <div class="card-hd">
+      <span class="card-title">You vs. Class Average</span>
+      <span class="badge badge-gold">Live</span>
+    </div>
+    <div class="chart-box tall"><canvas id="cmpChart"></canvas></div>
+  </div>
+</div>
+<script>
+  const user = JSON.parse(localStorage.getItem('user'));
+  if (!user || user.role !== 'student') window.location.replace('../login.html');
 
-            try {
-                // Fetch real data using relative path for Mobile support
-                const res = await fetch(`/api/students/${user.username}`);
-                const data = await res.json();
+  document.addEventListener('DOMContentLoaded', async () => {
+    try {
+      const data = await fetch(`/api/students/${user.username}`).then(r=>r.json());
+      document.getElementById('rnk').textContent = data.rank || '--';
+      document.getElementById('sec').textContent = data.section || '--';
+      if (data.total_students > 0)
+        document.getElementById('pct').textContent = Math.ceil((data.rank/data.total_students)*100) + '%';
 
-                // 2. Update Rank Card
-                document.getElementById('rankVal').textContent = data.rank || '--';
-                document.getElementById('secVal').textContent = data.section || '--';
-                
-                if(data.total_students > 0) {
-                    const pct = Math.ceil((data.rank / data.total_students) * 100);
-                    document.getElementById('topPercent').textContent = pct;
-                }
+      const avgs = data.class_averages || {};
+      new Chart(document.getElementById('cmpChart'),{
+        type:'bar',
+        data:{
+          labels:['Math','Physics','Chem','CS','English','PE'],
+          datasets:[
+            {label:'My Marks',data:[data.math_marks,data.physics_marks,data.chemistry_marks,data.cs_marks,data.english_marks,data.pe_marks],backgroundColor:'rgba(91,124,255,.75)',borderRadius:7},
+            {label:'Class Avg',data:[avgs.math||0,avgs.phy||0,avgs.chem||0,avgs.cs||0,avgs.eng||0,avgs.pe||0],backgroundColor:'rgba(255,255,255,.2)',borderRadius:7}
+          ]
+        },
+        options:{responsive:true,maintainAspectRatio:false,
+          scales:{y:{beginAtZero:true,max:100,grid:{color:'rgba(255,255,255,.06)'},ticks:{color:'rgba(154,171,216,.8)'}},
+            x:{grid:{display:false},ticks:{color:'rgba(154,171,216,.8)'}}},
+          plugins:{legend:{labels:{color:'rgba(154,171,216,.8)'}}}}
+      });
+    } catch(e){ console.error(e); }
+  });
 
-                // 3. Render Comparison Chart
-                const ctx = document.getElementById('compChart').getContext('2d');
-                new Chart(ctx, {
-                    type: 'bar',
-                    data: {
-                        labels: ['Math', 'Physics', 'Chem', 'CS', 'Eng', 'PE'],
-                        datasets: [
-                            {
-                                label: 'My Marks',
-                                data: [data.math_marks, data.physics_marks, data.chemistry_marks, data.cs_marks, data.english_marks, data.pe_marks],
-                                backgroundColor: '#fff',
-                                borderRadius: 5
-                            },
-                            {
-                                label: 'Class Average',
-                                data: [
-                                    data.class_averages?.math || 0, 
-                                    data.class_averages?.phy || 0, 
-                                    data.class_averages?.chem || 0, 
-                                    data.class_averages?.cs || 0, 
-                                    data.class_averages?.eng || 0, 
-                                    data.class_averages?.pe || 0
-                                ],
-                                backgroundColor: 'rgba(255, 255, 255, 0.3)',
-                                borderRadius: 5
-                            }
-                        ]
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        scales: { 
-                            y: { beginAtZero: true, max: 100, ticks: { color: 'white' }, grid: { color: 'rgba(255,255,255,0.1)' } }, 
-                            x: { ticks: { color: 'white' }, grid: { display: false } } 
-                        },
-                        plugins: { 
-                            legend: { labels: { color: 'white', font: { family: 'Poppins' } } } 
-                        }
-                    }
-                });
-            } catch(e) {
-                console.error("Error loading analytics", e);
-            }
-        });
-
-        async function downloadAnalyticsReport() {
-            const btn = document.querySelector('.feature-btn');
-            const originalText = btn.textContent;
-            btn.textContent = "⏳ Generating...";
-            btn.disabled = true;
-
-            try {
-                const res = await fetch('/api/report/download', {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({ username: user.username }) 
-                });
-
-                if(res.ok) {
-                    const blob = await res.blob();
-                    const url = window.URL.createObjectURL(blob);
-                    const a = document.createElement('a');
-                    a.href = url;
-                    a.download = `Analytics_Report_${user.username}.pdf`;
-                    document.body.appendChild(a);
-                    a.click();
-                    a.remove();
-                    btn.textContent = "✅ Downloaded";
-                } else {
-                    alert("Report generation unavailable.");
-                    btn.textContent = "❌ Failed";
-                }
-            } catch(e) {
-                btn.textContent = "❌ Error";
-            } finally {
-                setTimeout(() => {
-                    btn.disabled = false;
-                    btn.textContent = originalText;
-                }, 2000);
-            }
-        }
-    </script>
+  async function dlReport(btn){
+    const orig=btn.textContent; btn.textContent='⏳…'; btn.disabled=true;
+    try{
+      const res=await fetch('/api/report/download',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:user.username})});
+      if(res.ok){const a=document.createElement('a');a.href=URL.createObjectURL(await res.blob());a.download=`Report_${user.username}.pdf`;a.click();btn.textContent='✅ Done';}
+      else btn.textContent='❌ Failed';
+    }catch(e){btn.textContent='❌ Error';}
+    setTimeout(()=>{btn.textContent=orig;btn.disabled=false;},2500);
+  }
+</script>
 </body>
 </html>
