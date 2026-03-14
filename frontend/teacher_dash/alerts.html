@@ -1,56 +1,81 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Attendance Alerts</title>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
-    <style>
-        body { font-family: 'Poppins', sans-serif; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; color: white; padding: 20px; margin: 0; box-sizing: border-box; }
-        .container { max-width: 800px; margin: 0 auto; }
-        .header { background: rgba(255,255,255,0.1); padding: 20px; border-radius: 15px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border: 1px solid rgba(255,255,255,0.1); }
-        .back-btn { background: rgba(255,255,255,0.2); color: white; padding: 8px 15px; border-radius: 20px; text-decoration: none; font-size: 0.9em; }
-        .alert-card { background: rgba(255, 255, 255, 0.1); padding: 20px; margin-bottom: 15px; border-left: 5px solid #ff6b6b; border-radius: 10px; backdrop-filter: blur(5px); }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1.0">
+  <title>Attendance Alerts — GIET Portal</title>
+  <link rel="stylesheet" href="../theme.css">
 </head>
 <body>
-    <div class="container">
-        <div class="header">
-            <h2>⚠️ Critical Alerts (<75%)</h2>
-            <a href="index.html" class="back-btn">Back</a>
-        </div>
-        <div id="alertsList">Loading real-time data...</div>
+<div class="page page-narrow">
+  
+  <div class="topbar">
+    <div>
+      <div class="topbar-title">⚠️ Critical Alerts</div>
+      <div class="topbar-sub">Students below 75% attendance criteria</div>
     </div>
+    <a href="index.html" class="back-btn">← Dashboard</a>
+  </div>
 
-    <script>
-        const user = JSON.parse(localStorage.getItem('user'));
-        if(!user || user.role !== 'teacher') window.location.href = '../login.html';
+  <div class="card">
+    <div class="card-hd"><span class="card-title">🚨 Defaulter List</span></div>
+    
+    <div id="alertsList">
+      <div class="skeleton" style="width:100%; height:60px; margin-bottom:12px;"></div>
+      <div class="skeleton" style="width:100%; height:60px; margin-bottom:12px;"></div>
+    </div>
+  </div>
 
-        document.addEventListener('DOMContentLoaded', async () => {
-            try {
-                const res = await fetch('/api/teacher/students', {
-                    method: 'POST', headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({ username: user.username })
-                });
-                const data = await res.json();
-                const container = document.getElementById('alertsList');
-                container.innerHTML = '';
-                
-                const risky = data.students.filter(s => s.attendance < 75);
+</div>
 
-                if(risky.length === 0) {
-                    container.innerHTML = "<p style='text-align:center'>✅ All students are above 75%.</p>";
-                } else {
-                    risky.forEach(s => {
-                        container.innerHTML += `
-                            <div class="alert-card">
-                                <strong>${s.name} (${s.roll.toUpperCase()})</strong><br>
-                                <span style="color:#ff6b6b; font-weight:bold;">Current Attendance: ${s.attendance}%</span>
-                            </div>`;
-                    });
-                }
-            } catch(e) { console.error(e); }
+<script>
+  const user = JSON.parse(localStorage.getItem('user'));
+  if(!user || user.role !== 'teacher') window.location.href = '../login.html';
+
+  document.addEventListener('DOMContentLoaded', async () => {
+    const container = document.getElementById('alertsList');
+    
+    try {
+      const res = await fetch('/api/teacher/students', {
+        method: 'POST', headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ username: user.username })
+      });
+      const data = await res.json();
+      
+      const risky = data.students.filter(s => s.attendance < 75);
+
+      if(risky.length === 0) {
+        container.innerHTML = `
+          <div class="empty">
+            <div class="ico">✅</div>
+            <p>All clear!</p>
+            <p style="color:var(--muted); font-size: 0.8em; margin-top:4px;">Every student is maintaining above 75% attendance.</p>
+          </div>`;
+      } else {
+        let html = '';
+        risky.forEach(s => {
+          // Utilizing the alert-danger and badge-red classes from theme.css
+          html += `
+            <div class="alert alert-danger" style="justify-content: space-between; margin-bottom: 12px;">
+              <div>
+                <strong style="display:block; font-size: 1.05em;">${s.name}</strong>
+                <span style="font-size: 0.75em; color: rgba(239,68,68,0.8); text-transform: uppercase; letter-spacing: 1px;">Roll: ${s.roll}</span>
+              </div>
+              <div class="badge badge-red" style="font-size: 1em; padding: 6px 12px;">
+                ${s.attendance}%
+              </div>
+            </div>`;
         });
-    </script>
+        container.innerHTML = html;
+      }
+    } catch(e) { 
+      console.error(e);
+      container.innerHTML = `
+        <div class="alert alert-warning">
+          ⚠️ Failed to load real-time data. Please try refreshing.
+        </div>`;
+    }
+  });
+</script>
 </body>
 </html>

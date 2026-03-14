@@ -1,91 +1,128 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Parent - Chat with Teacher</title>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
-    <style>
-        body { font-family: 'Poppins', sans-serif; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; color: white; padding: 20px; margin: 0; box-sizing: border-box; }
-        .container { max-width: 800px; margin: 0 auto; height: 90vh; display: flex; flex-direction: column; }
-        .header { background: rgba(255,255,255,0.1); padding: 20px; border-radius: 15px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; border: 1px solid rgba(255,255,255,0.1); }
-        .back-btn { background: rgba(255,255,255,0.2); color: white; border: none; padding: 8px 20px; border-radius: 20px; text-decoration: none; font-size: 0.9em; transition: 0.3s; }
-        .chat-box { flex: 1; background: rgba(0,0,0,0.2); border-radius: 15px; padding: 20px; margin-bottom: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; border: 1px solid rgba(255,255,255,0.1); }
-        .msg { padding: 12px 18px; border-radius: 18px; max-width: 75%; font-size: 0.95em; word-wrap: break-word; line-height: 1.4; }
-        .msg.sent { background: #4CAF50; align-self: flex-end; border-bottom-right-radius: 2px; }
-        .msg.received { background: #2196F3; align-self: flex-start; border-bottom-left-radius: 2px; }
-        .input-area { display: flex; gap: 10px; }
-        input { flex: 1; padding: 15px; border-radius: 25px; border: none; outline: none; background: white; color: #333; font-family: 'Poppins', sans-serif; }
-        button { padding: 0 30px; border-radius: 25px; border: none; background: #FF9800; color: white; font-weight: bold; cursor: pointer; transition: 0.3s; }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1.0">
+  <title>Chat with Teacher — GIET Portal</title>
+  <link rel="stylesheet" href="../theme.css">
+  <style>
+    /* Chat Area Specifics */
+    .chat-container { display: flex; flex-direction: column; height: 68vh; min-height: 550px; }
+    
+    .chat-box-wrap { 
+      flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; 
+      padding: 16px; background: rgba(0,0,0,0.15); border-radius: var(--r-md); 
+      border: inset 1px rgba(255,255,255,0.02); margin-bottom: 16px; 
+    }
+    
+    /* Input Area */
+    .input-area { display: flex; gap: 12px; align-items: center; }
+    .input-area .form-ctrl { flex: 1; border-radius: 99px; padding: 14px 22px; }
+    .input-area .btn { border-radius: 99px; padding: 12px 28px; }
+  </style>
 </head>
 <body>
-    <div class="container">
-        <div class="header">
-            <h3>💬 Chat with Class Teacher</h3>
-            <a href="index.html" class="back-btn">Back</a>
-        </div>
-        <div class="chat-box" id="chatBox">
-            <p style="text-align:center; opacity:0.5; margin-top:20px;">Establishing secure connection...</p>
-        </div>
-        <div class="input-area">
-            <input type="text" id="msgInput" placeholder="Type a message..." onkeypress="if(event.key==='Enter') sendMessage()">
-            <button onclick="sendMessage()">Send</button>
-        </div>
+<div class="page page-narrow">
+  
+  <div class="topbar">
+    <div>
+      <div class="topbar-title">💬 Chat with Class Teacher</div>
+      <div class="topbar-sub">Secure faculty communication channel</div>
     </div>
+    <a href="index.html" class="back-btn">← Dashboard</a>
+  </div>
 
-    <script>
-        const user = JSON.parse(localStorage.getItem('user'));
-        if (!user || user.role !== 'parent') window.location.href = '../login.html';
+  <div class="card chat-container">
+    <div class="card-hd">
+      <span class="card-title" id="chatTitle" style="color: var(--cyan);">Establishing secure connection...</span>
+    </div>
+    
+    <div class="chat-box-wrap chat-box" id="chatBox">
+      <div class="skeleton" style="width: 140px; height: 38px; border-radius: 16px; align-self: flex-end; margin-bottom: 8px;"></div>
+      <div class="skeleton" style="width: 200px; height: 38px; border-radius: 16px; align-self: flex-start;"></div>
+    </div>
+    
+    <div class="input-area">
+      <input type="text" class="form-ctrl" id="msgInput" placeholder="Type your message..." disabled onkeypress="if(event.key==='Enter') sendMessage()">
+      <button class="btn btn-primary" id="sendBtn" onclick="sendMessage()" disabled>Send →</button>
+    </div>
+  </div>
 
-        // Change 'teacher1' to 't01' to match your actual database user
-const TEACHER_MAP = { 'A': 't01', 'B': 't02', 'C': 't03' };
-let myTeacher = 't01';
+</div>
 
-        document.addEventListener('DOMContentLoaded', async () => {
-            try {
-                const res = await fetch('/api/parent/child', {
-                    method: 'POST', headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ username: user.username })
-                });
-                const data = await res.json();
-                if(data.section) {
-                    myTeacher = TEACHER_MAP[data.section.toUpperCase()] || 'teacher1';
-                    loadMessages();
-                    setInterval(loadMessages, 3000); 
-                }
-            } catch(e) { console.error("Teacher lookup error:", e); }
-        });
+<script>
+  const user = JSON.parse(localStorage.getItem('user'));
+  if (!user || user.role !== 'parent') window.location.href = '../login.html';
 
-        async function loadMessages() {
-            try {
-                const res = await fetch('/api/chat/history', {
-                    method: 'POST', headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({ user1: user.username, user2: myTeacher })
-                });
-                const msgs = await res.json();
-                const box = document.getElementById('chatBox');
-                const html = msgs.map(m => `<div class="msg ${m.sender === user.username ? 'sent' : 'received'}">${m.content}</div>`).join('');
-                if(box.innerHTML !== html) {
-                    box.innerHTML = html;
-                    box.scrollTop = box.scrollHeight;
-                }
-            } catch(e) {}
-        }
+  // Change 'teacher1' to 't01' to match your actual database user
+  const TEACHER_MAP = { 'A': 't01', 'B': 't02', 'C': 't03' };
+  let myTeacher = 't01';
 
-        async function sendMessage() {
-            const input = document.getElementById('msgInput');
-            const content = input.value.trim();
-            if(!content) return;
-            try {
-                await fetch('/api/chat/send', {
-                    method: 'POST', headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({ sender: user.username, receiver: myTeacher, content: content })
-                });
-                input.value = '';
-                loadMessages();
-            } catch(e) { alert("Failed to send message"); }
-        }
-    </script>
+  document.addEventListener('DOMContentLoaded', async () => {
+    try {
+      const res = await fetch('/api/parent/child', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username: user.username })
+      });
+      const data = await res.json();
+      
+      if(data.section) {
+        myTeacher = TEACHER_MAP[data.section.toUpperCase()] || 'teacher1';
+        
+        // Update UI to show connection is ready
+        document.getElementById('chatTitle').innerText = `Messaging: Class Teacher (${myTeacher})`;
+        document.getElementById('msgInput').disabled = false;
+        document.getElementById('sendBtn').disabled = false;
+        
+        loadMessages();
+        setInterval(loadMessages, 3000); 
+      }
+    } catch(e) { 
+      console.error("Teacher lookup error:", e);
+      document.getElementById('chatTitle').innerText = "⚠️ Connection Error";
+      document.getElementById('chatTitle').style.color = "var(--red)";
+      document.getElementById('chatBox').innerHTML = '<div class="alert alert-danger">Failed to connect to the teacher.</div>';
+    }
+  });
+
+  async function loadMessages() {
+    try {
+      const res = await fetch('/api/chat/history', {
+        method: 'POST', headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ user1: user.username, user2: myTeacher })
+      });
+      const msgs = await res.json();
+      const box = document.getElementById('chatBox');
+      
+      // Mapped to theme.css chat-bubble classes
+      const html = msgs.length > 0 
+        ? msgs.map(m => `<div class="chat-bubble ${m.sender === user.username ? 'sent' : 'recv'}">${m.content}</div>`).join('')
+        : '<div class="empty"><div class="ico">👋</div><p>No messages yet. Send a message to start the conversation!</p></div>';
+        
+      if(box.innerHTML !== html) {
+        box.innerHTML = html;
+        box.scrollTop = box.scrollHeight;
+      }
+    } catch(e) {}
+  }
+
+  async function sendMessage() {
+    const input = document.getElementById('msgInput');
+    const content = input.value.trim();
+    if(!content) return;
+    try {
+      const res = await fetch('/api/chat/send', {
+        method: 'POST', headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ sender: user.username, receiver: myTeacher, content: content })
+      });
+      if(res.ok) {
+        input.value = '';
+        loadMessages();
+      }
+    } catch(e) { 
+      alert("Failed to send message"); 
+    }
+  }
+</script>
 </body>
 </html>

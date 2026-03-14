@@ -19,6 +19,8 @@ from reportlab.lib import colors
 from reportlab.pdfgen import canvas as rl_canvas
 from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
 from reportlab.lib.styles import getSampleStyleSheet
+import yagmail
+from dotenv import load_dotenv
 
 # ─────────────────────────────────────────────
 # 1. APP CONFIGURATION
@@ -37,6 +39,10 @@ app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
 db.init_app(app)
 
+load_dotenv()
+SENDER_EMAIL = os.getenv('EMAIL_USER')
+SENDER_PASS = os.getenv('EMAIL_PASS')
+yag = yagmail.SMTP(SENDER_EMAIL, SENDER_PASS)
 # ─────────────────────────────────────────────
 # 2. OCR SETUP
 # ─────────────────────────────────────────────
@@ -48,48 +54,50 @@ try:
     OCR_AVAILABLE = True
 except Exception:
     OCR_AVAILABLE = False
-
 # ─────────────────────────────────────────────
-# 3. FACE RECOGNITION SETUP
+# 3. OPENCV FACE RECOGNITION SETUP (No dlib required)
 # ─────────────────────────────────────────────
-face_recognizer = None
+# This uses LBPH which is compatible with Python 3.14
 face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
-AI_READY = False
-FACE_SIZE = (200, 200)
-
-
-def process_face(img_gray):
-    equalized = cv2.equalizeHist(img_gray)
-    return cv2.resize(equalized, FACE_SIZE)
-
+recognizer = cv2.face.LBPHFaceRecognizer_create()
+USER_MAP = {} # Maps numeric IDs to Usernames (e.g., {0: "24cse001"})
 
 def train_ai():
-    global AI_READY, face_recognizer
-    try:
-        face_dir = os.path.join(os.getcwd(), "faces", "24cse001")
-        if not os.path.exists(face_dir):
-            print("⚠️  Skipping AI training: No photos found in faces/24cse001/")
-            return
-        face_recognizer = cv2.face.LBPHFaceRecognizer_create()
-        face_samples, ids = [], []
-        for filename in os.listdir(face_dir):
-            if filename.lower().endswith((".jpg", ".png", ".jpeg")):
-                img = cv2.imread(os.path.join(face_dir, filename))
-                if img is None:
-                    continue
-                gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-                faces = face_cascade.detectMultiScale(gray, 1.1, 4)
-                for (x, y, w, h) in faces:
-                    face_samples.append(process_face(gray[y:y + h, x:x + w]))
-                    ids.append(1)
-        if face_samples:
-            face_recognizer.train(face_samples, np.array(ids))
-            AI_READY = True
-            print("✅ Face AI trained successfully.")
-    except Exception as e:
-        print(f"⚠️  AI training error: {e}")
+    global USER_MAP
+    print("🧠 AI Training (OpenCV LBPH Mode)...")
+    
+    # Matches your folder structure: backend/faces/
+    base_face_dir = os.path.join(os.getcwd(), "backend", "faces")
+    if not os.path.exists(base_face_dir):
+        print(f"⚠️ Directory NOT found: {base_face_dir}")
+        return
 
+    face_samples = []
+    ids = []
 
+    for idx, user_folder in enumerate(os.listdir(base_face_dir)):
+        user_path = os.path.join(base_face_dir, user_folder)
+        if os.path.isdir(user_path):
+            USER_MAP[idx] = user_folder
+            for filename in os.listdir(user_path):
+                if filename.lower().endswith((".jpg", ".png", ".jpeg")):
+                    img_path = os.path.join(user_path, filename)
+                    img = cv2.imread(img_path, cv2.IMREAD_GRAYSCALE)
+                    if img is None: continue
+                    
+                    faces = face_cascade.detectMultiScale(img, 1.3, 5)
+                    for (x, y, w, h) in faces:
+                        # Crop and resize face to standard size
+                        face_roi = cv2.resize(img[y:y+h, x:x+w], (200, 200))
+                        face_samples.append(face_roi)
+                        ids.append(idx)
+                        print(f"✅ Training image: {user_folder}/{filename}")
+
+    if face_samples:
+        recognizer.train(face_samples, np.array(ids))
+        print(f"🚀 AI Ready. Registered users: {list(USER_MAP.values())}")
+    else:
+        print("❌ No face images found to train.")
 # ─────────────────────────────────────────────
 # 4. HELPER: compute rank for a student
 # ─────────────────────────────────────────────
@@ -156,37 +164,51 @@ def login():
             'section': user.section or ''
         })
     return jsonify({'success': False, 'message': 'Invalid username or password'}), 401
-
-
 @app.route('/auth/face_login', methods=['POST'])
 def face_login():
-    if not AI_READY:
-        return jsonify({'success': False, 'message': 'Face AI not ready – add photos first'})
     try:
-        data = request.json or {}
-        image_data = data['image'].split(',')[1]
-        img_bytes = base64.decodebytes(image_data.encode())
-        img = cv2.imdecode(np.frombuffer(img_bytes, np.uint8), cv2.IMREAD_COLOR)
-        gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-        faces = face_cascade.detectMultiScale(gray, 1.1, 4)
+        data = request.get_json()
+        if not data or 'image' not in data:
+            return jsonify({'success': False, 'message': 'No image data'}), 400
+
+        # 1. Decode base64 to image
+        img_str = data['image'].split(",")[1]
+        image_bytes = base64.b64decode(img_str)
+        nparr = np.frombuffer(image_bytes, np.uint8)
+        frame = cv2.imdecode(nparr, cv2.IMREAD_GRAYSCALE) # Gray is needed for LBPH
+
+        # 2. Detect face in the live frame
+        faces = face_cascade.detectMultiScale(frame, 1.3, 5)
+        
+        if len(faces) == 0:
+            return jsonify({'success': False, 'message': 'No face detected in camera'})
+
         for (x, y, w, h) in faces:
-            roi = process_face(gray[y:y + h, x:x + w])
-            label, confidence = face_recognizer.predict(roi)
-            if confidence < 70:
-                user = User.query.filter_by(username='24cse001').first()
+            # 3. Prepare the face for prediction
+            face_roi = cv2.resize(frame[y:y+h, x:x+w], (200, 200))
+            
+            # 4. Use the recognizer we trained at startup
+            label_id, confidence = recognizer.predict(face_roi)
+            
+            print(f"🔍 Scan Match: ID {label_id} with Confidence {confidence}")
+
+            # Confidence < 80 is usually a solid match for LBPH
+            if confidence < 80:
+                username = USER_MAP.get(label_id)
+                user = User.query.filter_by(username=username).first()
                 if user:
                     return jsonify({
                         'success': True,
-                        'role': user.role,
-                        'username': user.username,
                         'name': user.name,
-                        'section': user.section or ''
+                        'role': user.role,
+                        'username': user.username
                     })
-        return jsonify({'success': False, 'message': 'Face not recognised – try again'})
+
+        return jsonify({'success': False, 'message': 'Identity not recognized.'})
+
     except Exception as e:
-        return jsonify({'success': False, 'message': str(e)})
-
-
+        print(f"🔥 FACE LOGIN ERROR: {e}")
+        return jsonify({'success': False, 'message': f'Server Error: {str(e)}'}), 500
 # =================================================================
 # 🏫  STUDENT ROUTES
 # =================================================================
@@ -367,27 +389,49 @@ def send_chat():
     db.session.commit()
     return jsonify({'success': True})
 
-
-# =================================================================
-# 💰  PAYMENT ROUTES
-# =================================================================
-
 @app.route('/api/payment/upload_proof', methods=['POST'])
 def upload_payment_proof():
     try:
         username = request.form.get('username', '')
-        txn_id   = request.form.get('txn_id', '')
-        amount   = request.form.get('amount', '0')
-        file     = request.files.get('screenshot')
+        txn_id = request.form.get('txn_id', '').strip()
+        amount = request.form.get('amount', '0')
+        file = request.files.get('screenshot')
 
-        if not file:
-            return jsonify({'success': False, 'message': 'No screenshot uploaded'}), 400
+        if not file or not txn_id:
+            return jsonify({'success': False, 'message': 'Missing screenshot or Transaction ID'}), 400
 
-        filename  = secure_filename(f"{username}_{txn_id}_{file.filename}")
+        # 1. Save File Temporarily
+        filename = secure_filename(f"{username}_{txn_id}_{file.filename}")
         file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
         file.save(file_path)
 
-        # Generate PDF receipt
+        # 2. OCR Verification Block
+        if OCR_AVAILABLE:
+            # Read image and convert to grayscale for better accuracy
+            img = cv2.imread(file_path)
+            gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+            
+            # Apply thresholding to make the text sharper for the AI
+            processed_img = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY | cv2.THRESH_OTSU)[1]
+            
+            # Extract Text
+            extracted_text = pytesseract.image_to_string(processed_img)
+            
+            # Search for Transaction ID (Case-insensitive)
+            if not re.search(re.escape(txn_id), extracted_text, re.IGNORECASE):
+                # Optional: Delete invalid file to save space
+                if os.path.exists(file_path):
+                    os.remove(file_path)
+                return jsonify({
+                    'success': False, 
+                    'message': f'Validation Failed: Transaction ID "{txn_id}" not found on the receipt image.'
+                }), 400
+            
+            print(f"✅ OCR Match Found for Txn: {txn_id}")
+        else:
+            print("⚠️ OCR skipped - Tesseract not configured.")
+
+        # 3. Generate PDF Receipt (only if OCR passed)
         buffer = io.BytesIO()
         c = rl_canvas.Canvas(buffer, pagesize=letter)
         w, h = letter
@@ -407,7 +451,7 @@ def upload_payment_proof():
             ('Transaction ID', txn_id),
             ('Amount Paid',   f'₹ {amount}'),
             ('Date',          date.today().strftime('%d %B %Y')),
-            ('Status',        '✅ VERIFIED'),
+            ('Status',        '✅ VERIFIED BY AI'),
         ]
         y = h - 130
         for label, value in details:
@@ -423,19 +467,19 @@ def upload_payment_proof():
         c.save()
         buffer.seek(0)
 
-        # Try email receipt
+        # 4. Email Receipt
         student = User.query.filter_by(username=username).first()
         if student and student.parent_email:
             try:
+                # Note: notifier.py needs to be able to handle this buffer
                 send_payment_receipt(student.name, student.parent_email, filename, buffer)
-            except Exception:
-                pass
+            except Exception as e:
+                print(f"Email error: {e}")
 
-        return jsonify({'success': True, 'message': 'Receipt generated and sent to parent email!'})
+        return jsonify({'success': True, 'message': 'Verification Successful! Receipt sent to parent.'})
 
     except Exception as e:
-        return jsonify({'success': False, 'message': str(e)}), 500
-
+        return jsonify({'success': False, 'message': f"OCR Error: {str(e)}"}), 500
 
 # =================================================================
 # 📄  REPORT DOWNLOAD

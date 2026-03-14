@@ -1,83 +1,152 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Child's Performance</title>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <style>
-        body { font-family: 'Poppins', sans-serif; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; color: white; padding: 20px; margin: 0; }
-        .container { max-width: 800px; margin: 0 auto; }
-        .header { background: rgba(255,255,255,0.1); padding: 20px; border-radius: 15px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
-        .back-btn { background: rgba(255,255,255,0.2); color: white; padding: 8px 15px; border-radius: 20px; text-decoration: none; font-size: 0.8em; }
-        .card { background: rgba(255,255,255,0.1); padding: 25px; border-radius: 15px; border: 1px solid rgba(255,255,255,0.1); margin-bottom: 20px; }
-        .marks-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 15px; }
-        .mark-item { background: rgba(0,0,0,0.2); padding: 15px; border-radius: 10px; text-align: center; }
-        .mark-val { font-size: 1.5em; font-weight: bold; display: block; color: #FFD700; }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1.0">
+  <title>Performance Report — GIET Portal</title>
+  <link rel="stylesheet" href="../theme.css">
+  <style>
+    /* Custom Grid for Subject Marks */
+    .marks-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: 16px; }
+    
+    .mark-stat {
+      background: rgba(255,255,255,0.03); border: 1px solid var(--border);
+      border-radius: var(--r-sm); padding: 18px 12px; text-align: center;
+      transition: all 0.25s var(--ease);
+    }
+    .mark-stat:hover { 
+      transform: translateY(-4px); 
+      border-color: var(--accent); 
+      background: rgba(91,124,255,0.08); 
+      box-shadow: var(--glow);
+    }
+    
+    .mark-val {
+      font-family: 'Outfit', sans-serif; font-size: 2em; font-weight: 800; display: block; line-height: 1; margin-top: 6px;
+      background: linear-gradient(135deg, #fff, var(--cyan));
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+    }
+    .mark-lbl { font-size: 0.72em; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; font-weight: 700; }
+  </style>
 </head>
 <body>
-    <div class="container">
-        <div class="header">
-            <h2>📈 Performance Report</h2>
-            <a href="index.html" class="back-btn">Back</a>
-        </div>
-        <div class="card">
-            <h3>Subject Wise Marks</h3>
-            <div id="marksGrid" class="marks-grid">Loading...</div>
-        </div>
-        <div class="card" style="height: 300px;">
-            <canvas id="parentChart"></canvas>
-        </div>
+<div class="page page-narrow">
+  
+  <div class="topbar">
+    <div>
+      <div class="topbar-title">📈 Performance Report</div>
+      <div class="topbar-sub">Academic progress and subject-wise analysis</div>
     </div>
+    <a href="index.html" class="back-btn">← Dashboard</a>
+  </div>
 
-    <script>
-        const user = JSON.parse(localStorage.getItem('user'));
-        if(!user) window.location.href = '../login.html';
+  <div class="card" style="margin-bottom: 24px;">
+    <div class="card-hd"><span class="card-title">📚 Subject Scores</span></div>
+    <div id="marksGrid" class="marks-grid">
+      <div class="skeleton" style="height: 85px; border-radius: 10px;"></div>
+      <div class="skeleton" style="height: 85px; border-radius: 10px;"></div>
+      <div class="skeleton" style="height: 85px; border-radius: 10px;"></div>
+      <div class="skeleton" style="height: 85px; border-radius: 10px;"></div>
+      <div class="skeleton" style="height: 85px; border-radius: 10px;"></div>
+      <div class="skeleton" style="height: 85px; border-radius: 10px;"></div>
+    </div>
+  </div>
 
-        document.addEventListener('DOMContentLoaded', async () => {
-            try {
-                const res = await fetch('/api/parent/child', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ username: user.username })
-                });
-                const data = await res.json();
-                
-                const subjects = [
-                    {n: 'Math', v: data.math}, {n: 'Phy', v: data.phy}, {n: 'Chem', v: data.chem},
-                    {n: 'CS', v: data.cs}, {n: 'Eng', v: data.eng}, {n: 'PE', v: data.pe}
-                ];
+  <div class="card">
+    <div class="card-hd"><span class="card-title">🎯 Skill Radar</span></div>
+    <div class="chart-box tall">
+      <canvas id="parentChart"></canvas>
+    </div>
+  </div>
 
-                document.getElementById('marksGrid').innerHTML = subjects.map(s => `
-                    <div class="mark-item">
-                        <small>${s.n}</small>
-                        <span class="mark-val">${s.v}</span>
-                    </div>
-                `).join('');
+</div>
 
-                new Chart(document.getElementById('parentChart'), {
-                    type: 'radar',
-                    data: {
-                        labels: subjects.map(s => s.n),
-                        datasets: [{
-                            label: 'Student Marks',
-                            data: subjects.map(s => s.v),
-                            backgroundColor: 'rgba(255, 215, 0, 0.2)',
-                            borderColor: '#FFD700',
-                            pointBackgroundColor: '#FFD700'
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        scales: { r: { beginAtZero: true, max: 100, grid: { color: 'rgba(255,255,255,0.1)' }, pointLabels: { color: 'white' } } },
-                        plugins: { legend: { display: false } }
-                    }
-                });
-            } catch(e) { console.error(e); }
-        });
-    </script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+  const user = JSON.parse(localStorage.getItem('user'));
+  if(!user) window.location.replace('../login.html');
+
+  document.addEventListener('DOMContentLoaded', async () => {
+    try {
+      const res = await fetch('/api/parent/child', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username: user.username })
+      });
+      const data = await res.json();
+      
+      const subjects = [
+        {n: 'Maths', v: data.math || 0}, {n: 'Physics', v: data.phy || 0}, {n: 'Chem', v: data.chem || 0},
+        {n: 'CS', v: data.cs || 0}, {n: 'English', v: data.eng || 0}, {n: 'PE', v: data.pe || 0}
+      ];
+
+      // Populate Grid
+      document.getElementById('marksGrid').innerHTML = subjects.map(s => `
+        <div class="mark-stat">
+          <span class="mark-lbl">${s.n}</span>
+          <span class="mark-val">${s.v}</span>
+        </div>
+      `).join('');
+
+      // Initialize customized Chart.js Radar
+      new Chart(document.getElementById('parentChart'), {
+        type: 'radar',
+        data: {
+          labels: subjects.map(s => s.n),
+          datasets: [{
+            label: 'Student Marks',
+            data: subjects.map(s => s.v),
+            backgroundColor: 'rgba(91,124,255,0.25)', // Translucent Accent Blue
+            borderColor: '#22d3ee', // Cyan border
+            borderWidth: 2,
+            pointBackgroundColor: '#fff',
+            pointBorderColor: '#22d3ee',
+            pointBorderWidth: 2,
+            pointHoverBackgroundColor: '#22d3ee',
+            pointHoverBorderColor: '#fff',
+            pointRadius: 4,
+            pointHoverRadius: 6
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          scales: { 
+            r: { 
+              beginAtZero: true, 
+              max: 100, 
+              ticks: { display: false }, // Hides the numbers on the spider web for a cleaner look
+              grid: { color: 'rgba(255,255,255,0.08)' }, // Subtle web lines
+              angleLines: { color: 'rgba(255,255,255,0.08)' },
+              pointLabels: { 
+                color: '#9aabd8', // var(--txt2)
+                font: { family: "'Plus Jakarta Sans', sans-serif", size: 12, weight: 600 }
+              } 
+            } 
+          },
+          plugins: { 
+            legend: { display: false },
+            tooltip: {
+              backgroundColor: 'rgba(10,15,44,0.9)',
+              titleColor: '#fff',
+              bodyColor: '#22d3ee',
+              bodyFont: { size: 14, weight: 'bold' },
+              borderColor: 'rgba(91,124,255,0.3)',
+              borderWidth: 1,
+              padding: 12,
+              displayColors: false
+            }
+          }
+        }
+      });
+    } catch(e) { 
+      console.error(e); 
+      document.getElementById('marksGrid').innerHTML = `
+        <div class="alert alert-danger" style="grid-column: 1 / -1;">
+          ⚠️ Failed to load performance data. Please try again.
+        </div>`;
+    }
+  });
+</script>
 </body>
 </html>

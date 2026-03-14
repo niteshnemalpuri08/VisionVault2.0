@@ -3,220 +3,188 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Face ID Login - GIET University</title>
-    <link rel="manifest" href="manifest.json">
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+    <title>Face ID Authentication | GIETU</title>
+    <link rel="stylesheet" href="theme.css">
+    
     <style>
-        body {
-            margin: 0;
-            font-family: 'Poppins', sans-serif;
-            background: #1a1a2e;
-            color: white;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            height: 100vh;
-            text-align: center;
-        }
-
-        h2 { margin-bottom: 10px; }
-        p { color: #ccc; margin-bottom: 20px; }
-
+        /* Camera UI Customization */
         .camera-box {
             position: relative;
-            width: 300px;
-            height: 300px;
-            background: #000;
-            border-radius: 20px;
-            overflow: hidden;
-            border: 4px solid #16213e;
-            box-shadow: 0 0 20px rgba(108, 92, 231, 0.5);
-            margin-bottom: 20px;
+            width: 280px; 
+            height: 280px;
+            background: #000; 
+            border-radius: 50%; /* Circular Biometric Look */
+            overflow: hidden; 
+            border: 3px solid var(--accent);
+            margin: 0 auto 24px; 
+            box-shadow: var(--glow);
+            transition: all 0.5s var(--ease);
         }
 
-        video {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            transform: scaleX(-1); 
+        video { 
+            width: 100%; 
+            height: 100%; 
+            object-fit: cover; 
+            transform: scaleX(-1); /* Mirror view */
         }
 
+        /* The Animated Laser Scanner */
         .scan-line {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
+            position: absolute; 
+            width: 100%; 
             height: 4px;
-            background: #2ecc71;
-            box-shadow: 0 0 10px #2ecc71;
-            animation: scan 2s infinite linear;
+            background: var(--cyan); 
+            box-shadow: 0 0 20px var(--cyan);
+            animation: scanLoop 2.5s infinite ease-in-out;
+            z-index: 5;
             display: none;
         }
 
-        @keyframes scan {
-            0% { top: 0%; }
-            50% { top: 100%; }
-            100% { top: 0%; }
+        @keyframes scanLoop { 
+            0%, 100% { top: 15%; opacity: 0.2; } 
+            50% { top: 80%; opacity: 1; } 
         }
 
-        .status {
-            font-size: 1.1em;
-            margin-bottom: 20px;
-            font-weight: 600;
-            min-height: 25px;
-        }
+        /* Success/Failure States */
+        .camera-box.success { border-color: var(--green); box-shadow: 0 0 40px rgba(16, 185, 129, 0.4); }
+        .camera-box.error { border-color: var(--red); box-shadow: 0 0 40px rgba(239, 68, 68, 0.4); }
 
-        button {
-            background: #667eea;
-            color: white;
-            border: none;
-            padding: 15px 40px;
-            font-size: 18px;
-            border-radius: 30px;
-            cursor: pointer;
-            transition: 0.3s;
-            box-shadow: 0 5px 15px rgba(108, 92, 231, 0.4);
-        }
-
-        button:disabled {
-            background: #555;
-            cursor: not-allowed;
-        }
-
-        .back-link {
-            margin-top: 20px;
-            color: #888;
-            text-decoration: none;
-            font-size: 0.9em;
+        .shutter-flash {
+            position: absolute; inset: 0;
+            background: white; opacity: 0;
+            pointer-events: none; z-index: 10;
         }
     </style>
 </head>
 <body>
 
-    <h2>👤 Face Identity</h2>
-    <p>Look at the camera to login</p>
+    <div class="page-narrow">
+        <div class="card" style="text-align: center; margin-top: 40px;">
+            <div class="sec-hd">
+                <div class="topbar-title" style="font-size: 1.8em; margin-bottom: 5px;">GIET UNIVERSITY</div>
+                <h2>👤 AI Face Login</h2>
+                <p>Ensure your face is well-lit and center-aligned</p>
+            </div>
 
-    <div class="camera-box">
-        <video id="video" autoplay playsinline></video>
-        <div class="scan-line" id="scanner"></div>
+            <div class="camera-box" id="camContainer">
+                <div class="shutter-flash" id="flash"></div>
+                <video id="video" autoplay playsinline></video>
+                <div class="scan-line" id="scanner"></div>
+            </div>
+
+            <div id="statusMsg" class="alert alert-info" style="display:none; justify-content: center; font-weight: 600;">
+                Initializing secure stream...
+            </div>
+
+            <button class="btn btn-primary" id="startBtn" onclick="initCamera()">
+                🚀 Start Biometric Scan
+            </button>
+            
+            <div style="margin-top: 25px;">
+                <a href="login.html" class="back-btn">
+                    <span>←</span> Back to Password Login
+                </a>
+            </div>
+        </div>
     </div>
-
-    <div class="status" id="statusMsg">Waiting for camera...</div>
-
-    <button id="scanBtn" onclick="startScanning()">Start Camera</button>
-    
-    <a href="login.html" class="back-link">Use Password Login</a>
 
     <script>
         const video = document.getElementById('video');
         const status = document.getElementById('statusMsg');
-        const btn = document.getElementById('scanBtn');
+        const startBtn = document.getElementById('startBtn');
         const scanner = document.getElementById('scanner');
-        let stream = null;
-        let isScanning = false;
+        const camContainer = document.getElementById('camContainer');
+        const flash = document.getElementById('flash');
 
-        async function startScanning() {
-            btn.disabled = true;
-            status.textContent = "Accessing Camera...";
-            status.style.color = "white";
+        let isScanning = false;
+        let stream = null;
+
+        async function initCamera() {
+            startBtn.style.display = "none";
+            status.style.display = "flex";
+            status.innerHTML = "Requesting Camera Access...";
 
             try {
                 stream = await navigator.mediaDevices.getUserMedia({ 
-                    video: { facingMode: "user" } 
+                    video: { facingMode: "user", width: 640, height: 480 } 
                 });
                 video.srcObject = stream;
                 
-                // Wait for the video feed to actually start
                 video.onplay = () => {
-                    status.textContent = "Position your face...";
-                    btn.style.display = "none"; // Hide button during scan
                     scanner.style.display = 'block';
                     isScanning = true;
-
-                    // Start the loop to check face every 1.5 seconds
-                    setTimeout(captureAndCheck, 1500);
+                    status.innerHTML = "AI Scanning Face Features...";
+                    // Start recognition loop
+                    setTimeout(performAIDetection, 1000);
                 };
-
             } catch (err) {
-                console.error(err);
-                status.textContent = "❌ Camera Error: " + err.message;
-                status.style.color = "#e74c3c";
-                btn.disabled = false;
-                btn.textContent = "Try Again";
+                status.className = "alert alert-danger";
+                status.innerHTML = "❌ Camera Error: " + err.message;
+                startBtn.style.display = "block";
             }
         }
 
-        async function captureAndCheck() {
+        async function performAIDetection() {
             if (!isScanning) return;
 
+            // Capture Frame
             const canvas = document.createElement('canvas');
             canvas.width = video.videoWidth;
             canvas.height = video.videoHeight;
-            canvas.getContext('2d').drawImage(video, 0, 0);
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(video, 0, 0);
             
-            const imageBase64 = canvas.toDataURL('image/jpeg', 0.8);
-            status.textContent = "Verifying Identity...";
-            status.style.color = "white";
+            // Visual Flash Effect (Sync with AI Capture)
+            flash.style.opacity = "0.4";
+            setTimeout(() => flash.style.opacity = "0", 100);
+
+            const base64Image = canvas.toDataURL('image/jpeg', 0.8);
 
             try {
                 const response = await fetch('/auth/face_login', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ image: imageBase64 })
+                    body: JSON.stringify({ image: base64Image })
                 });
 
-                const data = await response.json();
+                const result = await response.json();
 
-                if (data.success) {
-                    // ✅ LOGIN SUCCESS
+                if (result.success) {
+                    // ✅ AI MATCH FOUND
                     isScanning = false;
-                    status.textContent = `Welcome, ${data.name}!`;
-                    status.style.color = "#2ecc71"; 
-                    
-                    // Stop laser animation and make it solid green
+                    camContainer.className = "camera-box success";
+                    scanner.style.background = "var(--green)";
                     scanner.style.animation = "none";
                     scanner.style.top = "50%";
-                    scanner.style.background = "#2ecc71";
-                    scanner.style.boxShadow = "0 0 20px #2ecc71";
                     
-                    // Stop Camera Stream
-                    if(stream) stream.getTracks().forEach(track => track.stop());
+                    status.className = "alert alert-success";
+                    status.innerHTML = `✅ Authenticated: Welcome, ${result.name}!`;
 
-                    // Save session data
-                    localStorage.setItem('user', JSON.stringify(data));
+                    // Stop Camera
+                    if(stream) stream.getTracks().forEach(t => t.stop());
 
-                    // Redirect to your original dashboard folders
+                    // Store in local storage for session handling
+                    localStorage.setItem('user', JSON.stringify(result));
+
+                    // Role-based Redirect
                     setTimeout(() => {
-                        let targetPage = "login.html";
-                        if(data.role === 'student') targetPage = 'student_dash/index.html';
-                        else if(data.role === 'teacher') targetPage = 'teacher_dash/index.html';
-                        else if(data.role === 'parent') targetPage = 'parent_dash/index.html';
-                        
-                        // Use replace to prevent "Back" button loop
-                        window.location.replace(targetPage);
-                    }, 1200);
+                        let path = "login.html";
+                        if(result.role === 'student') path = 'student_dash/index.html';
+                        else if(result.role === 'teacher') path = 'teacher_dash/index.html';
+                        else if(result.role === 'parent') path = 'parent_dash/index.html';
+                        window.location.replace(path);
+                    }, 1500);
 
                 } else {
-                    // ❌ NO MATCH (Keep trying without stopping the camera)
-                    status.textContent = data.message || "Looking for face...";
-                    status.style.color = "#ccc";
-                    
-                    // Retry after 1.5 seconds
-                    setTimeout(captureAndCheck, 1500);
+                    // ❌ NO MATCH (Keep looking)
+                    status.innerHTML = "Searching Database... Stay Still";
+                    if(isScanning) setTimeout(performAIDetection, 2000); // Wait 2s before next shot
                 }
-
-            } catch (error) {
-                console.error("Fetch Error:", error);
-                status.textContent = "Server Connection Error";
-                status.style.color = "#e74c3c";
-                isScanning = false;
-                
-                // Allow user to try again
-                btn.style.display = "inline-block";
-                btn.disabled = false;
-                btn.textContent = "Start Camera";
-                scanner.style.display = 'none';
+            } catch (e) {
+                console.error("AI Server Error:", e);
+                status.className = "alert alert-danger";
+                status.innerHTML = "Connection Error. Retrying...";
+                if(isScanning) setTimeout(performAIDetection, 3000);
             }
         }
     </script>
