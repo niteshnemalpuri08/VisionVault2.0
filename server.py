@@ -20,7 +20,7 @@ from reportlab.pdfgen import canvas as rl_canvas
 from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
 from reportlab.lib.styles import getSampleStyleSheet
 import yagmail
-from dotenv import load_dotenv
+
 
 # ─────────────────────────────────────────────
 # 1. APP CONFIGURATION
@@ -39,7 +39,7 @@ app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
 db.init_app(app)
 
-load_dotenv()
+
 SENDER_EMAIL = os.getenv('EMAIL_USER')
 SENDER_PASS = os.getenv('EMAIL_PASS')
 yag = yagmail.SMTP(SENDER_EMAIL, SENDER_PASS)
