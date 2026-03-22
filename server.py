@@ -396,92 +396,112 @@ def upload_payment_proof():
         amount   = request.form.get('amount', '0')
         file     = request.files.get('screenshot')
 
-        if not file or not txn_id:
-            return jsonify({'success': False, 'message': 'Missing screenshot or Transaction ID'}), 400
+        # ── 1. Basic validation ───────────────────────────
+        if not file:
+            return jsonify({'success': False, 'message': 'No screenshot uploaded.'}), 400
+        if not txn_id:
+            return jsonify({'success': False, 'message': 'Transaction ID is required.'}), 400
+        if not username:
+            return jsonify({'success': False, 'message': 'Username missing.'}), 400
 
-        # ── 1. Save File ──────────────────────────────────
+        # ── 2. Save file ──────────────────────────────────
+        file_path = None
         try:
-            filename  = secure_filename(f"{username}_{txn_id}_{file.filename}")
+            filename  = secure_filename(f"{username}_{txn_id}.png")
             file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
             file.save(file_path)
+            print(f"File saved: {file_path}")
         except Exception as e:
             print(f"File save error: {e}")
-            return jsonify({'success': False, 'message': 'Could not save file.'}), 500
+            return jsonify({'success': False, 'message': 'Could not save file on server.'}), 500
 
-        # ── 2. OCR Verification ───────────────────────────
-        if OCR_AVAILABLE:
-            try:
+        # ── 3. OCR Verification (fully optional) ──────────
+        ocr_passed = True   # default: trust the user if OCR fails
+        ocr_done   = False
+
+        try:
+            if OCR_AVAILABLE and file_path and os.path.exists(file_path):
                 img = cv2.imread(file_path)
-                if img is None:
-                    print("Could not read image - skipping OCR verification.")
-                else:
-                    gray          = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-                    processed_img = cv2.threshold(
-                        gray, 0, 255,
-                        cv2.THRESH_BINARY | cv2.THRESH_OTSU
-                    )[1]
-                    extracted_text = pytesseract.image_to_string(processed_img)
+                if img is not None:
+                    gray           = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+                    processed      = cv2.threshold(
+                                         gray, 0, 255,
+                                         cv2.THRESH_BINARY | cv2.THRESH_OTSU
+                                     )[1]
+                    extracted_text = pytesseract.image_to_string(processed)
+                    ocr_done       = True
+                    print(f"OCR extracted: {extracted_text[:100]}")
 
                     if not re.search(re.escape(txn_id), extracted_text, re.IGNORECASE):
-                        if os.path.exists(file_path):
-                            os.remove(file_path)
-                        return jsonify({
-                            'success': False,
-                            'message': f'Validation Failed: Transaction ID "{txn_id}" not found in the receipt image.'
-                        }), 400
+                        ocr_passed = False
+                        print(f"OCR mismatch: txn_id {txn_id} not found")
+                    else:
+                        print(f"OCR match confirmed for txn: {txn_id}")
+                else:
+                    print("cv2.imread returned None - skipping OCR")
+            else:
+                print("OCR not available or file missing - skipping OCR")
 
-                    print(f"OCR Match Found for Txn: {txn_id}")
-            except Exception as e:
-                print(f"OCR processing error (non-fatal): {e}")
-        else:
-            print("OCR skipped - Tesseract not configured.")
+        except Exception as e:
+            print(f"OCR error (non-fatal, skipping): {e}")
+            ocr_passed = True  # don't block payment if OCR itself crashes
 
-        # ── 3. Generate PDF Receipt ───────────────────────
+        # Reject only if OCR ran AND failed
+        if ocr_done and not ocr_passed:
+            try:
+                if file_path and os.path.exists(file_path):
+                    os.remove(file_path)
+            except:
+                pass
+            return jsonify({
+                'success': False,
+                'message': f'Verification Failed: Transaction ID "{txn_id}" was not found in the screenshot.'
+            }), 400
+
+        # ── 4. Generate PDF receipt ───────────────────────
         buffer = None
         try:
             buffer = io.BytesIO()
             c      = rl_canvas.Canvas(buffer, pagesize=letter)
             w, h   = letter
 
-            # Header bar
-            c.setFillColorRGB(0.4, 0.49, 0.92)
+            # Header
+            c.setFillColorRGB(0.36, 0.47, 0.96)
             c.rect(0, h - 80, w, 80, fill=True, stroke=False)
             c.setFillColorRGB(1, 1, 1)
-            c.setFont('Helvetica-Bold', 22)
-            c.drawString(40, h - 50, 'GIET University - Fee Receipt')
+            c.setFont('Helvetica-Bold', 20)
+            c.drawString(40, h - 52, 'GIET University - Fee Receipt')
 
-            # Body details  (NO unicode symbols - Helvetica cannot render them)
+            # Details  ← NO unicode (no Rs., no checkmarks with special chars)
             c.setFillColorRGB(0.1, 0.1, 0.1)
-            details = [
-                ('Student ID',     username),
-                ('Transaction ID', txn_id),
+            rows = [
+                ('Student ID',     str(username)),
+                ('Transaction ID', str(txn_id)),
                 ('Amount Paid',    f'Rs. {amount}'),
                 ('Date',           date.today().strftime('%d %B %Y')),
-                ('Status',         'VERIFIED BY AI'),
+                ('Status',         'PAYMENT VERIFIED'),
             ]
             y = h - 130
-            for label, value in details:
+            for label, value in rows:
                 c.setFont('Helvetica-Bold', 12)
-                c.drawString(60, y, f'{label}:')
+                c.drawString(60, y, label + ':')
                 c.setFont('Helvetica', 12)
                 c.drawString(220, y, value)
-                y -= 30
+                y -= 32
 
             # Footer
-            c.setFont('Helvetica-Oblique', 10)
+            c.setFont('Helvetica-Oblique', 9)
             c.setFillColorRGB(0.5, 0.5, 0.5)
-            c.drawString(
-                60, 40,
-                'GIET University | AI Student Portal | System Generated Receipt'
-            )
+            c.drawString(60, 36, 'GIET University | AI Student Portal | Auto-generated Receipt')
             c.save()
             buffer.seek(0)
+            print("PDF generated successfully")
 
         except Exception as e:
             print(f"PDF generation error: {e}")
             buffer = None
 
-        # ── 4. Send Email Receipt ─────────────────────────
+        # ── 5. Send email receipt ─────────────────────────
         email_sent = False
         try:
             student = User.query.filter_by(username=username).first()
@@ -495,17 +515,17 @@ def upload_payment_proof():
         except Exception as e:
             print(f"Email dispatch error (non-fatal): {e}")
 
-        # ── 5. Always return JSON ─────────────────────────
-        msg = (
-            'Verification Successful! Receipt emailed to parent.'
+        # ── 6. Always return JSON ─────────────────────────
+        message = (
+            'Payment verified! Receipt has been emailed to your parent.'
             if email_sent else
-            'Payment recorded successfully! (Email notification pending.)'
+            'Payment recorded successfully!'
         )
-        return jsonify({'success': True, 'message': msg})
+        return jsonify({'success': True, 'message': message})
 
     except Exception as e:
-        print(f"upload_payment_proof fatal error: {e}")
-        return jsonify({'success': False, 'message': f'Server error: {str(e)}'}), 500
+        print(f"upload_payment_proof FATAL: {e}")
+        return jsonify({'success': False, 'message': 'Server error. Please try again.'}), 500
 # =================================================================
 # 📄  REPORT DOWNLOAD
 # =================================================================
