@@ -28,4 +28,4 @@ RUN mkdir -p uploads/payments faces
 EXPOSE 5000
 
 # 8. Start the app using Gunicorn (Production Server)
-CMD ["gunicorn", "--bind", "0.0.0.0:5000", "server:app"]
+CMD ["gunicorn", "--bind", "0.0.0.0:5000", "--timeout", "120", "--workers", "1", "server:app"]
