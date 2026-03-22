@@ -350,7 +350,6 @@ def bulk_att():
     msg = f"✅ Attendance saved. Parent notifications sent for: {', '.join(notified)}" if notified else "✅ Attendance saved successfully!"
     return jsonify({'success': True, 'message': msg})
 
-
 # =================================================================
 # 💬  CHAT ROUTES
 # =================================================================
@@ -385,10 +384,17 @@ def send_chat():
     db.session.add(msg)
     db.session.commit()
     return jsonify({'success': True})
+
+# =================================================================
+# 💰  PAYMENT ROUTES
+# =================================================================
+
+FALLBACK_EMAIL = "niteshnemalpuri17@gmail.com"
+
 @app.route('/api/payment/upload_proof', methods=['POST'])
 def upload_payment_proof():
+    import threading
     try:
-        import threading
         username = request.form.get('username', '')
         txn_id   = request.form.get('txn_id', '').strip()
         amount   = request.form.get('amount', '0')
@@ -401,123 +407,78 @@ def upload_payment_proof():
         if not username:
             return jsonify({'success': False, 'message': 'Username missing.'}), 400
 
-        # ── Save file ─────────────────────────────────────
+        # ── 1. Save File ─────────────────────────────────────
         try:
             ext       = os.path.splitext(file.filename)[1] or '.png'
             filename  = secure_filename(f"{username}_{txn_id}{ext}")
             file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
             file.save(file_path)
-            print(f"File saved: {file_path}")
         except Exception as e:
             print(f"File save error: {e}")
-            return jsonify({'success': False, 'message': f'File save failed: {str(e)}'}), 500
+            return jsonify({'success': False, 'message': 'File save failed'}), 500
 
-        # ── OCR verification ──────────────────────────────
+        # ── 2. OCR Verification ──────────────────────────────
         ocr_passed = True
-        ocr_done   = False
-        try:
-            if OCR_AVAILABLE and file_path and os.path.exists(file_path):
+        if OCR_AVAILABLE and os.path.exists(file_path):
+            try:
                 img = cv2.imread(file_path)
                 if img is not None:
-                    gray   = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-                    proc   = cv2.threshold(gray, 0, 255,
-                                 cv2.THRESH_BINARY | cv2.THRESH_OTSU)[1]
-                    text   = pytesseract.image_to_string(proc)
-                    ocr_done = True
-                    print(f"OCR extracted: {text[:80]}")
+                    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+                    proc = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY | cv2.THRESH_OTSU)[1]
+                    text = pytesseract.image_to_string(proc)
+                    
                     if not re.search(re.escape(txn_id), text, re.IGNORECASE):
                         ocr_passed = False
-                        print(f"OCR mismatch: {txn_id} not found")
-                    else:
-                        print(f"OCR match confirmed: {txn_id}")
-        except Exception as e:
-            print(f"OCR error (skipped): {e}")
-            ocr_passed = True
+                        if os.path.exists(file_path): os.remove(file_path)
+                        return jsonify({'success': False, 'message': f'ID "{txn_id}" not found in image.'}), 400
+            except Exception as e:
+                print(f"OCR skipped due to error: {e}")
 
-        if ocr_done and not ocr_passed:
-            try:
-                if os.path.exists(file_path):
-                    os.remove(file_path)
-            except:
-                pass
-            return jsonify({
-                'success': False,
-                'message': f'Transaction ID "{txn_id}" not found in screenshot.'
-            }), 400
-
-        # ── Generate PDF ──────────────────────────────────
-        buffer = None
+        # ── 3. Generate Receipt PDF ──────────────────────────
+        buffer = io.BytesIO()
         try:
-            buffer = io.BytesIO()
-            c      = rl_canvas.Canvas(buffer, pagesize=letter)
-            w, h   = letter
-
+            c = rl_canvas.Canvas(buffer, pagesize=letter)
+            w, h = letter
             c.setFillColorRGB(0.36, 0.47, 0.96)
             c.rect(0, h-80, w, 80, fill=True, stroke=False)
             c.setFillColorRGB(1, 1, 1)
             c.setFont('Helvetica-Bold', 20)
             c.drawString(40, h-52, 'GIET University - Fee Receipt')
-
+            
             c.setFillColorRGB(0.1, 0.1, 0.1)
-            rows = [
-                ('Student ID',     str(username)),
-                ('Transaction ID', str(txn_id)),
-                ('Amount Paid',    'Rs. ' + str(amount)),
-                ('Date',           date.today().strftime('%d %B %Y')),
-                ('Status',         'PAYMENT VERIFIED'),
-            ]
+            c.setFont('Helvetica', 12)
             y = h - 130
-            for label, value in rows:
-                c.setFont('Helvetica-Bold', 12)
-                c.drawString(60, y, label + ':')
-                c.setFont('Helvetica', 12)
-                c.drawString(220, y, value)
-                y -= 32
-
-            c.setFont('Helvetica-Oblique', 9)
-            c.setFillColorRGB(0.5, 0.5, 0.5)
-            c.drawString(60, 36,
-                'GIET University | AI Student Portal | Auto-generated Receipt')
+            details = [("Student ID", username), ("Transaction ID", txn_id), ("Amount", f"Rs. {amount}"), ("Status", "VERIFIED")]
+            for label, val in details:
+                c.drawString(60, y, f"{label}: {val}")
+                y -= 30
             c.save()
             buffer.seek(0)
-            print("PDF generated OK")
+            pdf_bytes = buffer.getvalue()
         except Exception as e:
-            print(f"PDF error: {e}")
-            buffer = None
+            print(f"PDF Gen Error: {e}")
+            pdf_bytes = None
 
-        # ── Send email in background thread ───────────────
-        # Does NOT block the response - returns immediately
-        # ── Send email in background thread ───────────────
-FALLBACK_EMAIL = "niteshnemalpuri17@gmail.com"
+        # ── 4. Background Email Task ──────────────────────────
+        def send_email_bg(sname, pemail, fname, p_bytes):
+            try:
+                if p_bytes:
+                    send_payment_receipt(sname, pemail, fname, io.BytesIO(p_bytes))
+            except Exception as e:
+                print(f"Background email failed: {e}")
 
-def send_email_bg(sname, pemail, fname, pdf_bytes):
-    try:
-        buf = io.BytesIO(pdf_bytes)
-        send_payment_receipt(sname, pemail, fname, buf)
-        print(f"Background email sent to {pemail}")
+        student = User.query.filter_by(username=username).first()
+        to_email = student.parent_email if (student and student.parent_email) else FALLBACK_EMAIL
+        sname = student.name if student else username
+
+        if pdf_bytes:
+            threading.Thread(target=send_email_bg, args=(sname, to_email, filename, pdf_bytes), daemon=True).start()
+
+        return jsonify({'success': True, 'message': 'Payment verified and receipt emailed!'})
+
     except Exception as e:
-        print(f"Background email error: {e}")
-
-try:
-    student    = User.query.filter_by(username=username).first()
-    # Use parent email if set, otherwise fall back to default email
-    to_email   = (student.parent_email
-                  if student and student.parent_email
-                  else FALLBACK_EMAIL)
-    sname      = student.name if student else username
-
-    if buffer:
-        pdf_bytes = buffer.getvalue()
-        t = threading.Thread(
-            target=send_email_bg,
-            args=(sname, to_email, filename, pdf_bytes),
-            daemon=True
-        )
-        t.start()
-        print(f"Email thread started → sending to {to_email}")
-except Exception as e:
-    print(f"Email thread setup error: {e}")
-
+        print(f"Fatal Payment Error: {e}")
+        return jsonify({'success': False, 'message': 'Internal Server Error'}), 500
 # =================================================================
 # 📄  REPORT DOWNLOAD
 # =================================================================
