@@ -487,41 +487,37 @@ def upload_payment_proof():
 
         # ── Send email in background thread ───────────────
         # Does NOT block the response - returns immediately
-        def send_email_bg(sname, pemail, fname, pdf_bytes):
-            try:
-                buf = io.BytesIO(pdf_bytes)
-                send_payment_receipt(sname, pemail, fname, buf)
-                print(f"Background email sent to {pemail}")
-            except Exception as e:
-                print(f"Background email error: {e}")
+        # ── Send email in background thread ───────────────
+FALLBACK_EMAIL = "niteshnemalpuri17@gmail.com"
 
-        try:
-            student = User.query.filter_by(username=username).first()
-            if student and student.parent_email and buffer:
-                pdf_bytes = buffer.getvalue()
-                t = threading.Thread(
-                    target=send_email_bg,
-                    args=(student.name, student.parent_email,
-                          filename, pdf_bytes),
-                    daemon=True
-                )
-                t.start()
-                print("Email thread started")
-        except Exception as e:
-            print(f"Email thread setup error: {e}")
-
-        # ── Return JSON immediately ────────────────────────
-        return jsonify({
-            'success': True,
-            'message': 'Payment verified! Receipt will be emailed to parent shortly.'
-        })
-
+def send_email_bg(sname, pemail, fname, pdf_bytes):
+    try:
+        buf = io.BytesIO(pdf_bytes)
+        send_payment_receipt(sname, pemail, fname, buf)
+        print(f"Background email sent to {pemail}")
     except Exception as e:
-        print(f"upload_payment_proof FATAL: {e}")
-        import traceback
-        traceback.print_exc()
-        return jsonify({'success': False,
-                        'message': f'Server error: {str(e)}'}), 500
+        print(f"Background email error: {e}")
+
+try:
+    student    = User.query.filter_by(username=username).first()
+    # Use parent email if set, otherwise fall back to default email
+    to_email   = (student.parent_email
+                  if student and student.parent_email
+                  else FALLBACK_EMAIL)
+    sname      = student.name if student else username
+
+    if buffer:
+        pdf_bytes = buffer.getvalue()
+        t = threading.Thread(
+            target=send_email_bg,
+            args=(sname, to_email, filename, pdf_bytes),
+            daemon=True
+        )
+        t.start()
+        print(f"Email thread started → sending to {to_email}")
+except Exception as e:
+    print(f"Email thread setup error: {e}")
+
 # =================================================================
 # 📄  REPORT DOWNLOAD
 # =================================================================
