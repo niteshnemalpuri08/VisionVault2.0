@@ -1,8 +1,5 @@
 import os
 from datetime import date
-from dotenv import load_dotenv
-
-load_dotenv()
 
 # ── Optional imports ──────────────────────────────────────
 try:
@@ -19,8 +16,8 @@ except ImportError:
     TwilioClient = None
     _TWILIO_OK = False
 
-# ── Configuration ─────────────────────────────────────────
-SENDER_EMAIL    = os.getenv("EMAIL_USER", "niteshnemalpuri17@gmail.com")
+# ── Configuration (reads from Render environment variables) ──
+SENDER_EMAIL    = os.getenv("EMAIL_USER", "")
 SENDER_PASSWORD = os.getenv("EMAIL_PASS", "")
 
 TWILIO_SID   = os.getenv("TWILIO_SID",   "")
@@ -53,7 +50,7 @@ def _get_sms():
 def send_absent_email(student_name, parent_email, date_absent):
     mailer = _get_yag()
     if not mailer:
-        print("Email skipped - yagmail not configured.")
+        print("Email skipped - not configured.")
         return
     try:
         subject = f"Alert: {student_name} Absent Today"
@@ -72,7 +69,7 @@ def send_absent_email(student_name, parent_email, date_absent):
 def send_absent_sms(student_name, parent_phone):
     client = _get_sms()
     if not client:
-        print("SMS skipped - Twilio not configured.")
+        print("SMS skipped - not configured.")
         return
     try:
         msg = f"GIETU ALERT: {student_name} is ABSENT today ({date.today()})."
@@ -85,16 +82,15 @@ def send_absent_sms(student_name, parent_phone):
 def send_payment_receipt(student_name, parent_email, filename, pdf_buffer):
     mailer = _get_yag()
     if not mailer:
-        print("Receipt email skipped - yagmail not configured.")
+        print("Receipt email skipped - not configured.")
         return False
     try:
         subject = f"Fee Receipt: {student_name}"
         body    = (
             f"Dear Parent,\n\n"
-            f"We have received the fee payment for {student_name}.\n"
+            f"Payment for {student_name} has been received and verified.\n"
             f"Please find the official receipt attached.\n\n"
-            f"Transaction Status: VERIFIED\n\n"
-            f"Regards,\nGIET University Accounts Dept."
+            f"Regards,\nGIET University"
         )
         pdf_buffer.seek(0)
         mailer.send(
