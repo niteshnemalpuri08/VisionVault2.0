@@ -57,17 +57,70 @@
   if (!user) window.location.replace('../login.html');
 
   async function submit() {
-    const btn=document.getElementById('verBtn'), txt=document.getElementById('statusTxt');
-    const amt=document.getElementById('amt').value, txn=document.getElementById('txn').value, file=document.getElementById('file').files[0];
-    if (!amt||!txn||!file){ txt.textContent='⚠️ Please fill all fields and upload screenshot.';txt.style.color='#fca5a5';return;}
-    const fd=new FormData();
-    fd.append('username',user.username);fd.append('amount',amt);fd.append('txn_id',txn);fd.append('screenshot',file);
-    btn.disabled=true;btn.textContent='⌛ Processing…';txt.textContent='Uploading…';txt.style.color='';
-    try{
-      const data=await fetch('/api/payment/upload_proof',{method:'POST',body:fd}).then(r=>r.json());
-      if(data.success){btn.textContent='✅ Done';btn.style.background='linear-gradient(135deg,#059669,#10b981)';txt.textContent='Receipt sent to parent email!';txt.style.color='#6ee7b7';setTimeout(()=>window.location.href='index.html',3000);}
-      else throw new Error(data.message||'Failed');
-    }catch(e){btn.disabled=false;btn.textContent='Verify & Get Receipt';btn.style.background='';txt.textContent='❌ '+e.message;txt.style.color='#fca5a5';}
+    const btn = document.getElementById('verBtn');
+    const txt = document.getElementById('statusTxt');
+    const amt  = document.getElementById('amt').value;
+    const txn  = document.getElementById('txn').value;
+    const file = document.getElementById('file').files[0];
+
+    // Validation
+    if (!amt || !txn || !file) {
+      txt.textContent = '⚠️ Please fill all fields and upload screenshot.';
+      txt.style.color = '#fca5a5';
+      return;
+    }
+
+    // Build form data
+    const fd = new FormData();
+    fd.append('username',   user.username);
+    fd.append('amount',     amt);
+    fd.append('txn_id',     txn);
+    fd.append('screenshot', file);
+
+    // UI loading state
+    btn.disabled    = true;
+    btn.textContent = '⌛ Processing…';
+    txt.textContent = 'Uploading to server…';
+    txt.style.color = '';
+
+    try {
+      // Step 1 — get raw response text first (never crashes)
+      const res  = await fetch('/api/payment/upload_proof', {
+        method: 'POST',
+        body: fd
+      });
+
+      const rawText = await res.text();
+      console.log('Server raw response:', rawText);
+
+      // Step 2 — try to parse as JSON safely
+      let data;
+      try {
+        data = JSON.parse(rawText);
+      } catch (parseErr) {
+        console.error('JSON parse failed. Raw response was:', rawText);
+        throw new Error('Server error. Please try again in a moment.');
+      }
+
+      // Step 3 — handle response
+      if (data.success) {
+        btn.textContent      = '✅ Done';
+        btn.style.background = 'linear-gradient(135deg,#059669,#10b981)';
+        txt.textContent      = data.message || 'Receipt sent to parent email!';
+        txt.style.color      = '#6ee7b7';
+        setTimeout(() => window.location.href = 'index.html', 3000);
+      } else {
+        throw new Error(data.message || 'Verification failed.');
+      }
+
+    } catch (e) {
+      btn.disabled        = false;
+      btn.textContent     = 'Verify & Get Receipt';
+      btn.style.background = '';
+      txt.textContent     = '❌ ' + e.message;
+      txt.style.color     = '#fca5a5';
+      console.error('Payment error:', e);
+    }
   }
 </script>
 </body>
