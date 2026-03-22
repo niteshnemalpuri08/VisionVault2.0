@@ -1,16 +1,18 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1.0">
   <title>Pay Fees — GIET Portal</title>
   <link rel="stylesheet" href="../theme.css">
   <style>
-    .two-col{display:grid;grid-template-columns:1fr 1fr;gap:20px;}
-    .qr-box{background:rgba(255,255,255,.95);padding:16px;border-radius:16px;display:inline-block;margin-bottom:14px;}
-    .qr-box img{width:180px;height:180px;object-fit:contain;display:block;}
-    .upi-code{font-family:monospace;background:rgba(255,255,255,.08);padding:4px 12px;border-radius:8px;color:var(--cyan);font-size:.88em;}
-    .step-lbl{font-size:.72em;color:var(--muted);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:12px;font-weight:700;}
-    @media(max-width:640px){.two-col{grid-template-columns:1fr}}
+    .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+    .qr-box { background: rgba(255,255,255,.95); padding: 16px; border-radius: 16px; display: inline-block; margin-bottom: 14px; }
+    .qr-box img { width: 180px; height: 180px; object-fit: contain; display: block; }
+    .upi-code { font-family: monospace; background: rgba(255,255,255,.08); padding: 4px 12px; border-radius: 8px; color: var(--cyan); font-size: .88em; }
+    .step-lbl { font-size: .72em; color: var(--muted); text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 12px; font-weight: 700; }
+    .helper-txt { font-size: 0.75em; color: var(--muted); margin-top: 4px; display: block; }
+    @media(max-width:640px) { .two-col { grid-template-columns: 1fr } }
   </style>
 </head>
 <body>
@@ -18,7 +20,7 @@
   <div class="topbar">
     <div>
       <div class="topbar-title">💳 Fee Payment</div>
-      <div class="topbar-sub">Secure payment with receipt</div>
+      <div class="topbar-sub">Secure payment with OCR verification</div>
     </div>
     <a href="index.html" class="back-btn">← Dashboard</a>
   </div>
@@ -30,96 +32,115 @@
         <img src="../upi_qr.jpg.jpeg" alt="QR Code" onerror="this.src='https://via.placeholder.com/180?text=QR'">
       </div>
       <div>UPI: <span class="upi-code">niteshnemalpuri17@okicici</span></div>
+      <p class="helper-txt">Scan using GPay, PhonePe, or Paytm</p>
     </div>
+
     <div class="card">
       <div class="step-lbl">Step 2: Submit Proof</div>
+      
       <div class="form-grp">
         <label class="form-lbl">Amount Paid (₹)</label>
         <input type="number" class="form-ctrl" id="amt" placeholder="e.g. 50000">
       </div>
+
       <div class="form-grp">
         <label class="form-lbl">UPI Transaction ID</label>
         <input type="text" class="form-ctrl" id="txn" placeholder="12-digit ID">
       </div>
+
+      <div class="form-grp">
+        <label class="form-lbl">Payment Date</label>
+        <input type="date" class="form-ctrl" id="payDate">
+        <span class="helper-txt">Date must match the receipt exactly</span>
+      </div>
+
       <div class="form-grp">
         <label class="form-lbl">Upload Screenshot</label>
         <input type="file" class="form-ctrl" id="file" accept="image/*">
       </div>
+
       <button class="btn btn-primary" style="width:100%;justify-content:center;padding:13px;margin-top:4px" id="verBtn" onclick="submit()">
         Verify & Get Receipt
       </button>
+      
       <p id="statusTxt" style="text-align:center;margin-top:12px;font-size:.85em;min-height:18px"></p>
     </div>
   </div>
 </div>
+
 <script>
+  // Auth check
   const user = JSON.parse(localStorage.getItem('user'));
   if (!user) window.location.replace('../login.html');
+
+  // Set default date to today for convenience
+  document.getElementById('payDate').valueAsDate = new Date();
 
   async function submit() {
     const btn = document.getElementById('verBtn');
     const txt = document.getElementById('statusTxt');
+    
+    // Get form values
     const amt  = document.getElementById('amt').value;
     const txn  = document.getElementById('txn').value;
+    const pDate = document.getElementById('payDate').value; // YYYY-MM-DD
     const file = document.getElementById('file').files[0];
 
     // Validation
-    if (!amt || !txn || !file) {
-      txt.textContent = '⚠️ Please fill all fields and upload screenshot.';
+    if (!amt || !txn || !pDate || !file) {
+      txt.textContent = '⚠️ Please complete all fields and upload a clear screenshot.';
       txt.style.color = '#fca5a5';
       return;
     }
 
-    // Build form data
+    // Prepare Multipart Data
     const fd = new FormData();
     fd.append('username',   user.username);
     fd.append('amount',     amt);
     fd.append('txn_id',     txn);
+    fd.append('payment_date', pDate); // Sending the date to backend
     fd.append('screenshot', file);
 
-    // UI loading state
+    // UI Loading State
     btn.disabled    = true;
-    btn.textContent = '⌛ Processing…';
-    txt.textContent = 'Uploading to server…';
+    btn.textContent = '⌛ Verifying...';
+    txt.textContent = 'Scanning screenshot for Date, ID, and Amount...';
     txt.style.color = '';
 
     try {
-      // Step 1 — get raw response text first (never crashes)
-      const res  = await fetch('/api/payment/upload_proof', {
+      const res = await fetch('/api/payment/upload_proof', {
         method: 'POST',
         body: fd
       });
 
       const rawText = await res.text();
-      console.log('Server raw response:', rawText);
+      console.log('Server Response:', rawText);
 
-      // Step 2 — try to parse as JSON safely
       let data;
       try {
         data = JSON.parse(rawText);
-      } catch (parseErr) {
-        console.error('JSON parse failed. Raw response was:', rawText);
-        throw new Error('Server error. Please try again in a moment.');
+      } catch (e) {
+        throw new Error('Server returned an invalid response. Check your backend console.');
       }
 
-      // Step 3 — handle response
       if (data.success) {
-        btn.textContent      = '✅ Done';
+        btn.textContent = '✅ Verified';
         btn.style.background = 'linear-gradient(135deg,#059669,#10b981)';
-        txt.textContent      = data.message || 'Receipt sent to parent email!';
-        txt.style.color      = '#6ee7b7';
-        setTimeout(() => window.location.href = 'index.html', 3000);
+        txt.textContent = data.message || 'Payment confirmed! Receipt sent to email.';
+        txt.style.color = '#6ee7b7';
+        
+        // Redirect back to dashboard after a delay
+        setTimeout(() => window.location.href = 'index.html', 4000);
       } else {
         throw new Error(data.message || 'Verification failed.');
       }
 
     } catch (e) {
-      btn.disabled        = false;
-      btn.textContent     = 'Verify & Get Receipt';
+      btn.disabled = false;
+      btn.textContent = 'Verify & Get Receipt';
       btn.style.background = '';
-      txt.textContent     = '❌ ' + e.message;
-      txt.style.color     = '#fca5a5';
-      console.error('Payment error:', e);
+      txt.textContent = '❌ ' + e.message;
+      txt.style.color = '#fca5a5';
     }
   }
 </script>
