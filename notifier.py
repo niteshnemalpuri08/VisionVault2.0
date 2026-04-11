@@ -1,13 +1,11 @@
 import os
+import io
+import yagmail
 from datetime import date
+from dotenv import load_dotenv
 
-# ── Optional imports ──────────────────────────────────────
-try:
-    import yagmail
-    _YAGMAIL_OK = True
-except ImportError:
-    yagmail = None
-    _YAGMAIL_OK = False
+# ── 1. LOAD ENVIRONMENT VARIABLES ──────────────────────────
+load_dotenv()
 
 try:
     from twilio.rest import Client as TwilioClient
@@ -16,7 +14,7 @@ except ImportError:
     TwilioClient = None
     _TWILIO_OK = False
 
-# ── Configuration (reads from Render environment variables) ──
+# ── 2. CONFIGURATION ──────────────────────────────────────
 SENDER_EMAIL    = os.getenv("EMAIL_USER", "")
 SENDER_PASSWORD = os.getenv("EMAIL_PASS", "")
 
@@ -24,17 +22,23 @@ TWILIO_SID   = os.getenv("TWILIO_SID",   "")
 TWILIO_AUTH  = os.getenv("TWILIO_AUTH",  "")
 TWILIO_PHONE = os.getenv("TWILIO_PHONE", "+15550000000")
 
-yag        = None
-sms_client = None
+# Global instances for reuse
+yag_instance = None
+sms_client   = None
 
 def _get_yag():
-    global yag
-    if yag is None and _YAGMAIL_OK and SENDER_EMAIL and SENDER_PASSWORD:
-        try:
-            yag = yagmail.SMTP(SENDER_EMAIL, SENDER_PASSWORD)
-        except Exception as e:
-            print(f"Email init failed: {e}")
-    return yag
+    global yag_instance
+    if yag_instance is None:
+        if SENDER_EMAIL and SENDER_PASSWORD:
+            try:
+                # Use the 16-character App Password from your .env
+                yag_instance = yagmail.SMTP(SENDER_EMAIL, SENDER_PASSWORD)
+                print(f"✅ Mailer initialized for: {SENDER_EMAIL}")
+            except Exception as e:
+                print(f"❌ Email initialization failed: {e}")
+        else:
+            print("⚠️ EMAIL_USER or EMAIL_PASS missing in .env")
+    return yag_instance
 
 def _get_sms():
     global sms_client
@@ -42,65 +46,85 @@ def _get_sms():
         try:
             sms_client = TwilioClient(TWILIO_SID, TWILIO_AUTH)
         except Exception as e:
-            print(f"SMS init failed: {e}")
+            print(f"❌ SMS initialization failed: {e}")
     return sms_client
 
-# ── Public Functions ──────────────────────────────────────
+# ── 3. PUBLIC FUNCTIONS ───────────────────────────────────
 
 def send_absent_email(student_name, parent_email, date_absent):
     mailer = _get_yag()
-    if not mailer:
-        print("Email skipped - not configured.")
-        return
+    if not mailer: return
     try:
-        subject = f"Alert: {student_name} Absent Today"
-        body    = (
+        subject = f"Attendance Alert: {student_name} Absent"
+        body = (
             f"Dear Parent,\n\n"
             f"{student_name} was marked ABSENT on {date_absent}.\n"
-            f"Please contact the class teacher if this is an error.\n\n"
-            f"Regards,\nGIET University"
+            f"Please contact the GIET University office for any queries.\n\n"
+            f"Regards,\nAttendance System"
         )
         mailer.send(to=parent_email, subject=subject, contents=body)
-        print(f"Absent email sent to {parent_email}")
+        print(f"📧 Absent email sent to {parent_email}")
     except Exception as e:
-        print(f"Absent email failed: {e}")
-
+        print(f"❌ Absent email failed: {e}")
 
 def send_absent_sms(student_name, parent_phone):
     client = _get_sms()
-    if not client:
-        print("SMS skipped - not configured.")
-        return
+    if not client: return
     try:
         msg = f"GIETU ALERT: {student_name} is ABSENT today ({date.today()})."
         client.messages.create(body=msg, from_=TWILIO_PHONE, to=parent_phone)
-        print(f"SMS sent to {parent_phone}")
+        print(f"📱 SMS sent to {parent_phone}")
     except Exception as e:
-        print(f"SMS failed: {e}")
-
+        print(f"❌ SMS failed: {e}")
 
 def send_payment_receipt(student_name, parent_email, filename, pdf_buffer):
+    """
+    Sends the payment receipt as a properly named PDF attachment.
+    Saves to a temp file briefly to ensure the filename is preserved.
+    """
     mailer = _get_yag()
     if not mailer:
-        print("Receipt email skipped - not configured.")
+        print("❌ Receipt skipped: Mailer not configured.")
         return False
+    
+    temp_path = f"temp_{filename}"
+    if not temp_path.lower().endswith(".pdf"):
+        temp_path += ".pdf"
+
     try:
-        subject = f"Fee Receipt: {student_name}"
-        body    = (
-            f"Dear Parent,\n\n"
-            f"Payment for {student_name} has been received and verified.\n"
-            f"Please find the official receipt attached.\n\n"
-            f"Regards,\nGIET University"
-        )
+        # 1. Write the buffer to a physical temp file
         pdf_buffer.seek(0)
+        with open(temp_path, "wb") as f:
+            f.write(pdf_buffer.read())
+
+        # 2. Prepare email content
+        subject = f"Fee Payment Receipt - {student_name}"
+        body = (
+            f"Dear Parent,\n\n"
+            f"The fee payment for {student_name} has been successfully verified.\n"
+            f"Please find the attached official receipt for your records.\n\n"
+            f"Regards,\nAccounts Department, GIET University"
+        )
+
+        # 3. Send using the file path (guarantees the PDF name and extension)
         mailer.send(
             to=parent_email,
             subject=subject,
             contents=body,
-            attachments=pdf_buffer
+            attachments=temp_path
         )
-        print(f"Receipt sent to {parent_email}")
+        
+        print(f"🚀 Receipt PDF successfully emailed to {parent_email}")
+        
+        # 4. Clean up the temp file
+        if os.path.exists(temp_path):
+            os.remove(temp_path)
+            
         return True
+
     except Exception as e:
-        print(f"Receipt email failed: {e}")
+        print(f"❌ Receipt email failed: {e}")
+        # Final cleanup attempt
+        if os.path.exists(temp_path):
+            os.remove(temp_path)
         return False

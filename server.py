@@ -324,32 +324,34 @@ def get_teacher_students():
         })
 
     return jsonify({'section': teacher.section, 'students': result})
-
-
 @app.route('/api/attendance/bulk', methods=['POST'])
 def bulk_att():
     data = request.json or {}
     notified = []
+    
     for item in data.get('attendance', []):
         student = User.query.filter_by(username=item['roll']).first()
+        
         if student and student.performance:
             p = student.performance
+            
             if item['present']:
                 p.attendance = min(100, p.attendance + 0.5)
             else:
+                # 1. Update the attendance record
                 p.attendance = max(0, p.attendance - 1.5)
-                # Notify parent if below 75%
-                if p.attendance < 75 and student.parent_email:
+                
+                # 2. Notify parent IMMEDIATELY because they are absent today
+                if student.parent_email:
                     try:
                         send_absent_email(student.name, student.parent_email, date.today())
                         notified.append(student.name)
-                    except Exception:
-                        pass
+                    except Exception as e:
+                        print(f"Error sending to {student.name}: {e}")
 
     db.session.commit()
-    msg = f"✅ Attendance saved. Parent notifications sent for: {', '.join(notified)}" if notified else "✅ Attendance saved successfully!"
+    msg = f"✅ Attendance saved. Notifications sent: {', '.join(notified)}" if notified else "✅ Attendance saved."
     return jsonify({'success': True, 'message': msg})
-
 # =================================================================
 # 💬  CHAT ROUTES
 # =================================================================
@@ -390,20 +392,23 @@ def send_chat():
 # =================================================================
 
 FALLBACK_EMAIL = "niteshnemalpuri17@gmail.com"
-
 @app.route('/api/payment/upload_proof', methods=['POST'])
 def upload_payment_proof():
     import threading
+    from datetime import datetime
     try:
-        username = request.form.get('username', '')
-        txn_id   = request.form.get('txn_id', '').strip()
-        amount   = request.form.get('amount', '0')
-        file     = request.files.get('screenshot')
+        username  = request.form.get('username', '')
+        txn_id    = request.form.get('txn_id', '').strip()
+        amount    = request.form.get('amount', '0')
+        user_date = request.form.get('payment_date', '') # Expects YYYY-MM-DD from HTML
+        file      = request.files.get('screenshot')
 
         if not file:
             return jsonify({'success': False, 'message': 'No screenshot uploaded.'}), 400
         if not txn_id:
             return jsonify({'success': False, 'message': 'Transaction ID required.'}), 400
+        if not user_date:
+            return jsonify({'success': False, 'message': 'Payment date is required.'}), 400
         if not username:
             return jsonify({'success': False, 'message': 'Username missing.'}), 400
 
@@ -417,22 +422,55 @@ def upload_payment_proof():
             print(f"File save error: {e}")
             return jsonify({'success': False, 'message': 'File save failed'}), 500
 
-        # ── 2. OCR Verification ──────────────────────────────
-        ocr_passed = True
+        # ── 2. ADVANCED OCR Verification (ID, Amount, Date) ──
         if OCR_AVAILABLE and os.path.exists(file_path):
             try:
                 img = cv2.imread(file_path)
                 if img is not None:
+                    # Pre-processing
                     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
                     proc = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY | cv2.THRESH_OTSU)[1]
                     text = pytesseract.image_to_string(proc)
                     
-                    if not re.search(re.escape(txn_id), text, re.IGNORECASE):
-                        ocr_passed = False
-                        if os.path.exists(file_path): os.remove(file_path)
-                        return jsonify({'success': False, 'message': f'ID "{txn_id}" not found in image.'}), 400
+                    print(f"--- OCR DEBUG START ---\n{text}\n--- OCR DEBUG END ---")
+
+                    # A) Verify Transaction ID
+                    id_match = re.search(re.escape(txn_id), text, re.IGNORECASE)
+                    
+                    # B) Verify Amount (Handles 5000 or 5000.00)
+                    clean_amt = amount.replace(',', '')
+                    amount_pattern = rf"({re.escape(clean_amt)}(\.00)?)"
+                    amount_match = re.search(amount_pattern, text)
+
+                    # C) Verify User-Selected Date
+                    # Convert '2026-03-22' to various formats for matching
+                    dt_obj = datetime.strptime(user_date, '%Y-%m-%d')
+                    
+                    # Look for Day (e.g. "22") and Month (e.g. "Mar" or "March") separately
+                    # This is much more reliable for OCR than matching a full string.
+                    day_str     = dt_obj.strftime('%d')
+                    month_full  = dt_obj.strftime('%B') # March
+                    month_short = dt_obj.strftime('%b') # Mar
+                    
+                    has_day   = re.search(day_str, text)
+                    has_month = (re.search(month_full, text, re.IGNORECASE) or 
+                                 re.search(month_short, text, re.IGNORECASE))
+
+                    # FINAL OCR VALIDATION
+                    if not id_match:
+                        return jsonify({'success': False, 'message': f'Transaction ID "{txn_id}" not found on receipt.'}), 400
+                    
+                    if not amount_match:
+                        return jsonify({'success': False, 'message': f'Amount Rs.{amount} not detected on receipt.'}), 400
+                    
+                    if not (has_day and has_month):
+                        return jsonify({'success': False, 'message': f'Receipt date does not match selected date ({day_str} {month_short}).'}), 400
+
+                    print("✅ Security Verified: ID, Amount, and Date matched.")
+                    
             except Exception as e:
-                print(f"OCR skipped due to error: {e}")
+                print(f"OCR Verification System Error: {e}")
+                # We let it pass if OCR crashes but log the error for debugging
 
         # ── 3. Generate Receipt PDF ──────────────────────────
         buffer = io.BytesIO()
@@ -448,7 +486,16 @@ def upload_payment_proof():
             c.setFillColorRGB(0.1, 0.1, 0.1)
             c.setFont('Helvetica', 12)
             y = h - 130
-            details = [("Student ID", username), ("Transaction ID", txn_id), ("Amount", f"Rs. {amount}"), ("Status", "VERIFIED")]
+            # Use the verified user_date for the PDF receipt
+            formatted_date = datetime.strptime(user_date, '%Y-%m-%d').strftime('%d %b %Y')
+            
+            details = [
+                ("Student ID", username), 
+                ("Transaction ID", txn_id), 
+                ("Amount Paid", f"Rs. {amount}"), 
+                ("Payment Date", formatted_date),
+                ("Status", "VERIFIED & RECORDED")
+            ]
             for label, val in details:
                 c.drawString(60, y, f"{label}: {val}")
                 y -= 30
